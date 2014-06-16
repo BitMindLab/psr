@@ -541,7 +541,7 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
         //goto error_end;
     }
 
-    check_nan(vget(temp[1], 1), "warning: dIlambda--1\n");
+    check_nan(vget(temp[1], 1), "warning: dIlambda error in part 1\n");
 
     //3. compute  sum_phi   temp[2]
     vect idoc_list = all_corpus->idoc_list[var->i];
@@ -554,7 +554,7 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     }
     gsl_vector_scale(temp[2], 0.5); // temp[2]
 
-    check_nan(vget(temp[2], 1), "warning: dIlambda--2\n");
+    check_nan(vget(temp[2], 1), "warning: dIlambda error in part 2\n");
 
     //3. compute - (N / \zeta) * exp(\lambda + \nu^2 / 2) = temp[3]
     gsl_vector_set_zero(temp[3]);
@@ -575,7 +575,7 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
         gsl_vector_scale(temp[3], 0.5);
     }
 
-    check_nan(vget(temp[3], 1), "warning: dIlambda--3\n");
+    check_nan(vget(temp[3], 1), "warning: dIlambda error in part 3\n");
 
     // set return value (note negating derivative of bound)
 
@@ -749,7 +749,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // assert(!isnan(nu_i));
         if (isnan(nu_k))
         {
-            init_nu = init_nu*2;
+            init_nu = 10;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -781,7 +781,7 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // assert(!isnan(nu_i));
         if (isnan(nu_k))
         {
-            init_nu = init_nu*2;
+            init_nu = 10;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -1006,6 +1006,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     		show_vect(var->Ulambda, "Ulambda=");
     		gsl_matrix_set_row(c_var->Ucorpus_lambda, var->u, var->Ulambda);
     	}
+
 
 
 

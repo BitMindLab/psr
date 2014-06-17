@@ -154,6 +154,8 @@ double get_zeta_ui(llna_corpus_var * c_var, int u, int i)
     	+ 0.125 * (mget(c_var->Ucorpus_nu, u, k) + mget(c_var->Vcorpus_nu, i, k));
     	zeta_ui += exp(t1);
     }
+	check_nan(zeta_ui, "warning: zeta_ui is nan");
+	check_nan(1.0/zeta_ui, "warning: 1/zeta_ui is nan");
     return zeta_ui;
 }
 
@@ -166,6 +168,7 @@ double get_zeta_uij(llna_corpus_var * c_var, int u, int i, int j)
     			(mget(c_var->Vcorpus_lambda, j, k) - mget(c_var->Vcorpus_lambda, i, k));
 
     }
+    check_nan(zeta_uij, "warning: zeta_uij is nan");
     if (zeta_uij > 10)
     	zeta_uij = 10;
     return zeta_uij;
@@ -924,11 +927,11 @@ llna_corpus_var * new_llna_corpus_var(int nusers, int nitems, int ndocs, int k)
 void  init_corpus_var(llna_corpus_var * c_var, char* start)
 {
 	if (strcmp(start, "rand")==0) {
-		gsl_matrix_set_all(c_var->Ucorpus_lambda,1.0);
-		gsl_matrix_set_all(c_var->Vcorpus_lambda,1.0);
+		gsl_matrix_set_all(c_var->Ucorpus_lambda, 0.5);
+		gsl_matrix_set_all(c_var->Vcorpus_lambda, 0.5);
 
-		gsl_matrix_set_all(c_var->Ucorpus_nu,1.0);
-		gsl_matrix_set_all(c_var->Vcorpus_nu,1.0);
+		gsl_matrix_set_all(c_var->Ucorpus_nu, 0.5);
+		gsl_matrix_set_all(c_var->Vcorpus_nu, 0.5);
 	} else {
 		char fname[100];
 		sprintf(fname, "%s-Ucorpus_lambda.dat", start);

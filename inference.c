@@ -665,6 +665,7 @@ double df_Inu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * va
     	v -= ((0.125 * (double) doc_total) / zeta_ui) *
     	                 exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k))+
     	                		 0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k));
+    	check_nan(v, "warning: df_Inu_k is nan");
     }
 
 

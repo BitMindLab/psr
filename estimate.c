@@ -627,7 +627,7 @@ int main(int argc, char* argv[])
         {
             read_params(argv[7]);
             print_params();
-            inference(argv[2], argv[3], argv[4],argv[5],argv[6]);
+            //inference(argv[2], argv[3], argv[4],argv[5],argv[6]);
             return(0);
         }
     }

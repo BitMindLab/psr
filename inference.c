@@ -153,9 +153,11 @@ double get_zeta_ui(llna_corpus_var * c_var, int u, int i)
     	t1 = 0.5 * (mget(c_var->Ucorpus_lambda, u, k) + mget(c_var->Vcorpus_lambda, i, k))
     	+ 0.125 * (mget(c_var->Ucorpus_nu, u, k) + mget(c_var->Vcorpus_nu, i, k));
     	zeta_ui += exp(t1);
+
+    	check_nan(zeta_ui, "warning: zeta_ui is nan");
+    	check_nan(1.0/zeta_ui, "warning: 1/zeta_ui is nan");
     }
-	check_nan(zeta_ui, "warning: zeta_ui is nan");
-	check_nan(1.0/zeta_ui, "warning: 1/zeta_ui is nan");
+
     return zeta_ui;
 }
 
@@ -741,7 +743,7 @@ void opt_Inu(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod, co
 
 void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model * mod, corpus * all_corpus)
 {
-    double init_nu = 10;
+    double init_nu = 2;
     double nu_k = 0, log_nu_k = 0, df = 0, d2f = 0;
     int iter = 0;
 
@@ -751,9 +753,9 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         iter++;
         nu_k = exp(log_nu_k);
         // assert(!isnan(nu_i));
-        if (isnan(nu_k))
+        if (isnan(nu_k) || nu_k > 10)
         {
-            init_nu = 12;
+            init_nu = 2;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -762,9 +764,16 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // printf("%5.5f  %5.5f \n", nu_i, f);
         df = df_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
         d2f = d2f_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
+
+        printf("df = %lf, d2f=%lf, nu_k=%lf\n", df, d2f, nu_k);
+
         check_nan(df, "warning: Unu-df is nan");
         check_nan(d2f, "warning: Unu-d2f is nan");
+
         log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
+
+        check_nan(log_nu_k, "warning: Unu-log_nu_k is nan");
+        check_nan(exp(log_nu_k), "warning: Unu-exp(log_nu_k) is nan");
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
 
@@ -774,7 +783,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
 void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model * mod, corpus * all_corpus)
 {
 
-    double init_nu = 10;
+    double init_nu = 2;
     double nu_k = 0, log_nu_k = 0, df = 0, d2f = 0;
     int iter = 0;
 
@@ -784,9 +793,9 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         iter++;
         nu_k = exp(log_nu_k);
         // assert(!isnan(nu_i));
-        if (isnan(nu_k))
+        if (isnan(nu_k) || nu_k > 10)
         {
-            init_nu = 12;
+            init_nu = 2;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -799,6 +808,8 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         check_nan(d2f, "warning: Inu-d2f is nan");
 
         log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
+        check_nan(log_nu_k, "warning: Inu-log_nu_k is nan");
+        check_nan(exp(log_nu_k), "warning: Inu-exp(log_nu_k) is nan");
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
 

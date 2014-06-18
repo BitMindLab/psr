@@ -440,7 +440,8 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     gsl_vector_sub(temp[1], var->Ulambda);  //temp[1]=mu-lambda
     gsl_blas_dsymv(CblasLower, 1, mod->Uinv_cov, temp[1], 0, temp[0]); //temp[0]=inv*temp[1]
 
-    check_nan(vget(temp[0], 1), "warning: dUlambda--0\n");
+    for (int i = 0; i < mod->k; i++)
+    	check_nan(vget(temp[0], i), "warning: dUlambda--0\n");
 
 
     //2. compute temp[1]
@@ -463,7 +464,8 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
         gsl_vector_add(temp[1],temp[2]);
     }
 
-    check_nan(vget(temp[1], 1), "warning: dUlambda--1\n");
+    for (int i = 0; i < mod->k; i++)
+    	check_nan(vget(temp[1], i), "warning: dUlambda--1\n");
 
     //3. compute  sum_phi   temp[2]
     vect udoc_list = all_corpus->udoc_list[var->u];
@@ -477,7 +479,8 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     gsl_vector_scale(temp[2], 0.5); // temp[2]
 
 
-    check_nan(vget(temp[2], 1), "warning: dUlambda--2\n");
+    for (int i = 0; i < mod->k; i++)
+    	check_nan(vget(temp[2], i), "warning: dUlambda--2\n");
 
     //3. compute - (N / \zeta) * exp(\lambda + \nu^2 / 2) = temp[3]
     gsl_vector_set_zero(temp[3]);
@@ -488,17 +491,19 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	int v_id = all_corpus->docs[doc_id].v_id;
     	double zeta_ui = get_zeta_ui(c_var, var->u, v_id);
 
-        for (int i = 0; i < temp[4]->size; i++)
+        for (int i = 0; i < mod->k; i++)
         {
             vset(temp[4], i, -(((double) doc_total) / zeta_ui) *
                  exp(0.5 * (vget(var->Ulambda, i) + mget(c_var->Vcorpus_lambda, v_id, i))+
                 		 0.125 * (vget(var->Unu, i) + mget(c_var->Vcorpus_nu, v_id, i))));
+
+            check_nan(vget(temp[4], i), "warning: dUlambda--3\n");
         }
         gsl_vector_add(temp[3], temp[4]);
         gsl_vector_scale(temp[3], 0.5);
     }
 
-    check_nan(vget(temp[3], 1), "warning: dUlambda--3\n");
+
 
     // set return value (note negating derivative of bound)
 
@@ -524,7 +529,8 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     gsl_vector_sub(temp[1], var->Ilambda);  //temp[1]=mu-lambda
     gsl_blas_dsymv(CblasLower, 1, mod->Vinv_cov, temp[1], 0, temp[0]); //temp[0]=inv*temp[1]
 
-    check_nan(vget(temp[0], 1), "warning: dIlambda--0\n");
+    for (int i = 0; i < mod->k; i++)
+    	check_nan(vget(temp[0], i), "warning: dIlambda--0\n");
 
 
     //2. compute temp[1]
@@ -546,7 +552,8 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
         //goto error_end;
     }
 
-    check_nan(vget(temp[1], 1), "warning: dIlambda error in part 1\n");
+    for (int i = 0; i < mod->k; i++)
+    	check_nan(vget(temp[1], i), "warning: dIlambda error in part 1\n");
 
     //3. compute  sum_phi   temp[2]
     vect idoc_list = all_corpus->idoc_list[var->i];
@@ -559,7 +566,8 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     }
     gsl_vector_scale(temp[2], 0.5); // temp[2]
 
-    check_nan(vget(temp[2], 1), "warning: dIlambda error in part 2\n");
+    for (int i = 0; i < mod->k; i++)
+    	check_nan(vget(temp[2], i), "warning: dIlambda error in part 2\n");
 
     //3. compute - (N / \zeta) * exp(\lambda + \nu^2 / 2) = temp[3]
     gsl_vector_set_zero(temp[3]);
@@ -570,17 +578,17 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	int u_id = all_corpus->docs[doc_id].u_id;
     	double zeta_ui = get_zeta_ui(c_var, u_id, var->i);
 
-        for (int i = 0; i < temp[4]->size; i++)
+        for (int i = 0; i < mod->k; i++)
         {
             vset(temp[4], i, -(((double) doc_total) / zeta_ui) *
                  exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, i) + vget(var->Ilambda, i)) +
                 		 0.125 * ( mget(c_var->Ucorpus_nu, u_id, i) + vget(var->Inu, i))));
+            check_nan(vget(temp[4], i), "warning: dIlambda--3\n");
         }
         gsl_vector_add(temp[3], temp[4]);
         gsl_vector_scale(temp[3], 0.5);
     }
 
-    check_nan(vget(temp[3], 1), "warning: dIlambda error in part 3\n");
 
     // set return value (note negating derivative of bound)
 

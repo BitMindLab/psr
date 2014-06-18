@@ -785,7 +785,12 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
 
-    vset(var->Unu, k, exp(log_nu_k));
+    // 鉴于合理性，保证nu不会发散，以至于特别大，这里强制设定nu《10.
+    // 但是不能解决根本问题，根本问题是 本不应该发散的
+    double tt = exp(log_nu_k);
+    if (tt < 10 )
+    	vset(var->Unu, k, tt); // else 就不更新
+
 }
 
 void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model * mod, corpus * all_corpus)
@@ -821,7 +826,9 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
 
-    vset(var->Inu, k, exp(log_nu_k));
+    double tt = exp(log_nu_k);
+    if (tt < 10 )
+        vset(var->Inu, k, tt); // else 就不更新
 }
 
 

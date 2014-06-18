@@ -465,7 +465,7 @@ void inference(char* all_dataset, char* test_dataset, int N, char* model_root, c
 
 
     //for(int i=0;i<=iteration+1;i++)
-    for(int i = 1; i <= 3; i++)
+    for(int i = 1; i <= 20; i++)
     {
         sprintf(fname, "./model/%03d-Ucorpus_lambda.dat", i);
         scanf_matrix(fname, Ucorpus_lambda);
@@ -486,7 +486,8 @@ void inference(char* all_dataset, char* test_dataset, int N, char* model_root, c
         }
 
         evaluate(test_corpus, rect_u, rect_i, &precision, &recall, N);
-        printf("iteration:%03d,inference:\tprecision=%lf\trecall=%lf\n",i, precision, recall);
+        double F1 = 2 * precision * recall / (precision + recall);
+        printf("iteration:%03d,inference:\tprecision=%lf\trecall=%lf\tF1=%lf\n",i, precision, recall, F1);
 
     }
 

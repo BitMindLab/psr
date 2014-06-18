@@ -752,7 +752,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // assert(!isnan(nu_i));
         if (isnan(nu_k))
         {
-            init_nu = 10;
+            init_nu = 12;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -760,8 +760,9 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // f = f_nu_i(nu_i, i, var, mod, d);
         // printf("%5.5f  %5.5f \n", nu_i, f);
         df = df_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
-        //printf("%f\n",df);
         d2f = d2f_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
+        check_nan(df, "warning: Unu-df is nan");
+        check_nan(d2f, "warning: Unu-d2f is nan");
         log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
@@ -784,7 +785,7 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // assert(!isnan(nu_i));
         if (isnan(nu_k))
         {
-            init_nu = 10;
+            init_nu = 12;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -792,8 +793,10 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // f = f_nu_i(nu_i, i, var, mod, d);
         // printf("%5.5f  %5.5f \n", nu_i, f);
         df = df_Inu_k(nu_k, k, c_var, var, mod, all_corpus);
-        //printf("%f\n",df);
         d2f = d2f_Inu_k(nu_k, k, c_var, var, mod, all_corpus);
+        check_nan(df, "warning: Inu-df is nan");
+        check_nan(d2f, "warning: Inu-d2f is nan");
+
         log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
@@ -994,7 +997,6 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
     	// 1. sample u i j
     	SampleTriple(all_corpus, var); // get * j
-
     	show_sample(var->j, var->num_triples);
     	// 2. update
     	opt_phi(c_var, var, &doc, mod); // 计算 var->phi  顺便更新c_var->corpus_phi_sum
@@ -1002,6 +1004,8 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	// 2.2 update lambda & nu
     	//update_u   Ulambda
     	df_Ulambda(c_var, var, mod, df, all_corpus);  // df 是导数
+    	for (int i = 0; i < mod->k; i++)
+    		check_nan(vget(df, i), "warning: dUlambda is nan");
     	if (check_nan(vget(df, 1), "warning: dUlambda is nan") == 0)
     	{
         	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
@@ -1015,6 +1019,8 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
     	// Unu
     	opt_Unu(c_var, var, mod, all_corpus);
+    	for (int i = 0; i < mod->k; i++)
+    		check_nan(vget(var->Unu, i), "warning:Unu is nan");
     	if (check_nan(vget(var->Unu, 1), "warning:Unu is nan") == 0)
     	{
     		show_vect(var->Unu, "Unu=");
@@ -1026,6 +1032,8 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
     	// update_i
     	df_Ilambda(c_var, var, mod, df, all_corpus);  // df 是导数
+    	for (int i = 0; i < mod->k; i++)
+    		check_nan(vget(df, i), "warning: dIlambda is nan");
     	if (check_nan(vget(df, 1), "warning: dIlambda is nan") == 0)
     	{
         	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
@@ -1037,6 +1045,8 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
     	// Inu
     	opt_Inu(c_var, var, mod, all_corpus);
+    	for (int i = 0; i < mod->k; i++)
+    		check_nan(vget(var->Inu, 1), "warning:Inu is nan");
     	if (check_nan(vget(var->Inu, 1), "warning:Inu is nan") == 0)
     	{
     		show_vect(var->Inu, "Inu=");

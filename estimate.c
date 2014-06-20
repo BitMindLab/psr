@@ -481,8 +481,8 @@ void inference(char* all_dataset, char* test_dataset, int N, char* model_root, c
         	size_t u_id, i_id;
         	gsl_matrix_max_index(predict_r, &u_id, &i_id);
         	mset(predict_r, u_id, i_id, -1000.0);
-        	rect_u.id[j] = u_id - 1;
-        	rect_i.id[j] = i_id - 1;
+        	rect_u.id[j] = u_id;  // 这里不需要-1，本身就是从0开始的
+        	rect_i.id[j] = i_id;
         }
 
         evaluate(test_corpus, rect_u, rect_i, &precision, &recall, N);

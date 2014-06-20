@@ -883,7 +883,7 @@ void init_var( llna_corpus_var * c_var, llna_var_param * var, doc * doc, llna_mo
     opt_phi(c_var, var, doc, mod);  // 这里是指针
 
     var->niter = 1;
-    var->num_triples = 100;
+    var->num_triples = NUM_SAMPLE;
     var->lhood = 0.0;
 
     var->j =  malloc(sizeof(int) * var->num_triples);

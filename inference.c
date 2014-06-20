@@ -452,7 +452,7 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	j_id = var->j[i];
     	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
 
-    	zeta_uij = -700.2;
+    	//zeta_uij = -700.2;
 
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
         t1 =exp(zeta_uij);
@@ -515,6 +515,10 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
 
 
 # if defined(DEBUG)
+    show_vect(temp[0], "temp0=");
+    show_vect(temp[1], "temp1=");
+    show_vect(temp[2], "temp2=");
+    show_vect(temp[3], "temp3=");
     show_vect(df, "df_Ulambda=");
 # endif
 }
@@ -957,11 +961,38 @@ llna_corpus_var * new_llna_corpus_var(int nusers, int nitems, int ndocs, int k)
 void  init_corpus_var(llna_corpus_var * c_var, char* start)
 {
 	if (strcmp(start, "rand")==0) {
-		gsl_matrix_set_all(c_var->Ucorpus_lambda, 0.5);
-		gsl_matrix_set_all(c_var->Vcorpus_lambda, 0.5);
+
+		gsl_rng * r = gsl_rng_alloc(gsl_rng_taus);   //用陶斯沃特方法 ，定义一个随机数生成器r
+	    long t1;
+	    double val;
+
+
+	    (void) time(&t1);
+	    gsl_rng_set(r, t1); //seed the random number generator,如果两次的种子相同，那么生成的值也相同
+
+
+	    for (int i = 0; i < c_var->Ucorpus_lambda->size1; i++)
+	    {
+	    	for (int j = 0; j < c_var->Ucorpus_lambda->size2; j++)
+	    	{
+	    		val = gsl_rng_uniform(r) + 1.0/100;   //gsl_rng_uniform生成[0,1)随机数,后者估计是用来平滑的
+	    		mset(c_var->Ucorpus_lambda, i, j, val);
+	    	}
+	    }
+
+	    for (int i = 0; i < c_var->Vcorpus_lambda->size1; i++)
+	    {
+	    	for (int j = 0; j < c_var->Vcorpus_lambda->size2; j++)
+	    	{
+	    		val = gsl_rng_uniform(r) + 1.0/100;   //gsl_rng_uniform生成[0,1)随机数,后者估计是用来平滑的
+	    		mset(c_var->Vcorpus_lambda, i, j, val);
+	    	}
+	    }
 
 		gsl_matrix_set_all(c_var->Ucorpus_nu, 0.5);
 		gsl_matrix_set_all(c_var->Vcorpus_nu, 0.5);
+
+		gsl_rng_free(r);
 	} else {
 		char fname[100];
 		sprintf(fname, "%s-Ucorpus_lambda.dat", start);

@@ -366,6 +366,8 @@ void opt_phi(llna_corpus_var * c_var, llna_var_param * var, doc * doc, llna_mode
 
     // compute phi proportions in log space
 
+    gsl_vector * sum_phi = gsl_vector_alloc(mod->k);
+    gsl_vector_set_zero(sum_phi);
     for (n = 0; n < doc->nterms; n++)
     {
     	// 更新 局部变量 var->phi
@@ -387,19 +389,16 @@ void opt_phi(llna_corpus_var * c_var, llna_var_param * var, doc * doc, llna_mode
         }
 
         // 更新 全局变量  var->corpus_phi_sum
-
-        gsl_vector * sum_phi = gsl_vector_alloc(mod->k);
-        gsl_vector_set_zero(sum_phi);
         for (i = 0; i < mod->k; i++)
         {
             vset(sum_phi, i,
                  vget(sum_phi, i) +
                  ((double) doc->count[n]) * mget(var->phi, n, i)); //sum_phi-----13
         }
-        gsl_matrix_set_row(c_var->corpus_phi_sum, doc->d_id, sum_phi);
-        gsl_vector_free(sum_phi);
-
     }
+    gsl_matrix_set_row(c_var->corpus_phi_sum, doc->d_id, sum_phi);
+    gsl_vector_free(sum_phi);
+
 }
 
 /**
@@ -444,7 +443,7 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	check_nan(vget(temp[0], i), "warning: dUlambda--0\n");
 
 
-    //2. compute temp[1]
+    //2. compute zeta_uij / (1 + zeta_uij) * (Ilambda - Jlambda) = temp[1]
     gsl_vector_set_zero(temp[1]);
     double t1; int j_id;
     for (int i = 0; i < var->num_triples; i++)
@@ -467,13 +466,18 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     for (int i = 0; i < mod->k; i++)
     	check_nan(vget(temp[1], i), "warning: dUlambda--1\n");
 
-    //3. compute  sum_phi   temp[2]
+    //3. compute  sum( sum_phi )   temp[2]
     vect udoc_list = all_corpus->udoc_list[var->u];
     gsl_vector_set_zero(temp[2]);
     for (int n = 0; n < udoc_list.size; n++)
     {
     	int doc_id = udoc_list.id[n];
-    	gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;
+    	gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;// .....以上都已经检查无误！
+
+    	double aaa = 0.0;
+    	for(int k = 0; k < mod->k; k++ )
+    		aaa += vget(&tt, k);
+    	printf("is_equal 1: %lf\n", aaa);
     	gsl_vector_add(temp[2], &tt);
     }
     gsl_vector_scale(temp[2], 0.5); // temp[2]

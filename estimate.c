@@ -63,8 +63,6 @@ void expectation(corpus* all_corpus, llna_model* model, llna_ss* ss,
     *avg_niter = 0.0;
     *converged_pct = 0;
 
-
-
     for(int i = 0; i < 1; i++)
     {
     	total=0;

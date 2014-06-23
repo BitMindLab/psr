@@ -474,10 +474,6 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	int doc_id = udoc_list.id[n];
     	gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;// .....以上都已经检查无误！
 
-    	double aaa = 0.0;
-    	for(int k = 0; k < mod->k; k++ )
-    		aaa += vget(&tt, k);
-    	printf("is_equal 1: %lf\n", aaa);
     	gsl_vector_add(temp[2], &tt);
     }
     gsl_vector_scale(temp[2], 0.5); // temp[2]
@@ -570,6 +566,12 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     {
     	int doc_id = idoc_list.id[n];
     	gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;
+
+    	double aaa = 0.0;
+    	for(int k = 0; k < mod->k; k++ )
+    		aaa += vget(&tt, k);
+    	printf("is_equal 1: %lf\n", aaa);
+
     	gsl_vector_add(temp[2], &tt);
     }
     gsl_vector_scale(temp[2], 0.5); // temp[2]
@@ -608,6 +610,10 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
 
 
 # if defined(DEBUG)
+    show_vect(temp[0], "temp0=");
+    show_vect(temp[1], "temp1=");
+    show_vect(temp[2], "temp2=");
+    show_vect(temp[3], "temp3=");
     show_vect(df, "df_Ilambda=");
 # endif
 
@@ -1065,6 +1071,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
     	// 2.2 update lambda & nu
     	//update_u   Ulambda
+
     	df_Ulambda(c_var, var, mod, df, all_corpus);  // df 是导数
     	for (int i = 0; i < mod->k; i++)
     		check_nan(vget(df, i), "warning: dUlambda is nan");
@@ -1091,6 +1098,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
 
     	opt_phi(c_var, var, &doc, mod);
+
 
     	// update_i
     	df_Ilambda(c_var, var, mod, df, all_corpus);  // df 是导数

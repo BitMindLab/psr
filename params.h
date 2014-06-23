@@ -25,7 +25,7 @@
 //#define PARALLEL
 #define MLE 0
 #define SHRINK 1
-#define NUM_SAMPLE 1
+#define NUM_SAMPLE 20
 
 typedef struct llna_params
 {

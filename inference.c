@@ -160,7 +160,8 @@ double get_zeta_ui_inv(llna_corpus_var * c_var, int u, int i)
 	if (isinf(zeta_ui))
 		return 0.0000001;
 	else
-		return 1.0 / zeta_ui;
+		return 1.0 / zeta_ui;  //因为zeta_ui有时特别大inf，double存储不下，因此这里可以返回1/zeta_ui
+	//zeta_ui如果很小，等于0,怎么办呢？
 
 }
 
@@ -174,10 +175,42 @@ double get_zeta_uij(llna_corpus_var * c_var, int u, int i, int j)
 
     }
     check_nan(zeta_uij, "warning: zeta_uij is nan");
-    if (zeta_uij > 10)
-    	zeta_uij = 10;
     return zeta_uij;
 }
+
+double sigmoid(double x)
+{
+	if (isinf(exp(x)))
+		return 1.0;
+	else if (isinf(exp(-x)))
+		return 0.0;
+	else
+		return 1 / (1 + exp(-x));
+}
+
+
+
+/*
+ * 如果zeta_uij太大，exp(zeta_uij)会溢出;如果太小,exp(-zeta_uij)会溢出，因此这里直接返回sigmoid(zeta_uij)比较好
+ */
+/*double get_zeta_uij_sigmoid(llna_corpus_var * c_var, int u, int i, int j)
+{
+    double zeta_uij = 0.0;
+    for (int k = 0; k < c_var->Ucorpus_lambda->size2; k++)
+    {
+    	zeta_uij  += mget(c_var->Ucorpus_lambda, u, k) *
+    			(mget(c_var->Vcorpus_lambda, j, k) - mget(c_var->Vcorpus_lambda, i, k));
+    	check_nan(zeta_uij, "warning: zeta_uij is nan");
+
+    }
+
+	if (isinf(exp(zeta_uij)))
+		return 1.0;
+	else if (isinf(exp(-zeta_uij)))
+		return 0.0;
+	else
+		return 1 / (1 + exp(-zeta_uij));
+}*/
 
 
 
@@ -238,13 +271,13 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
     		printf("warning: out of range in lhood_bnd 1");
     	}
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
-        t1 =exp(zeta_uij);
-        t1 = t1 / (1 + t1);
+        t1 =sigmoid(zeta_uij);
+
 
         gsl_blas_ddot(var->Ulambda, var->Ilambda, &t2);
         gsl_blas_ddot(var->Ulambda, &Jlambda, &t3);
 
-        lhood += - log(1 + exp(zeta_uij)) - t1 * (t3 - t2 - zeta_uij);
+        lhood += log(1 - t1) - t1 * (t3 - t2 - zeta_uij);
     }
 
     // 3.E[log p(z_n | \eta)] + E[log p(w_n | \beta)] + H(q(z_n | \phi_n))
@@ -457,8 +490,8 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	//zeta_uij = -700.2;
 
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
-        t1 =exp(zeta_uij);
-        t1 = t1 / (1 + t1);
+        t1 =sigmoid(zeta_uij);
+
         gsl_blas_dcopy(var->Ilambda, temp[2]);
         gsl_vector_sub(temp[2], &Jlambda);  //temp[2] = Ilambda-Jlambda
         gsl_vector_scale(temp[2], t1);   //temp[2] = t1*(Ilambda-Jlambda)
@@ -549,8 +582,8 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
 
     	//gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
-        t1 =exp(zeta_uij);
-        t1 = t1 / (1 + t1);
+        t1 =sigmoid(zeta_uij);
+
         gsl_blas_dcopy(var->Ulambda, temp[2]);  //temp[2] = Ulambda
         gsl_vector_scale(temp[2], t1);   //temp[2] = t1* Ulambda
 

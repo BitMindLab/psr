@@ -114,7 +114,9 @@ double fixed_point_iter_i(int, llna_var_param *, llna_model *, doc *);
 
 double get_zeta_ui_inv(llna_corpus_var * c_var, int u, int i);
 double get_zeta_uij(llna_corpus_var * c_var, int u, int i, int j);
+//double get_zeta_uij_sigmoid(llna_corpus_var * c_var, int u, int i, int j);
 
+double sigmoid(double x);
 void show_vect(gsl_vector * a, char * text);
 void show_sample(int * j, int num_triples);
 

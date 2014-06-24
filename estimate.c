@@ -321,7 +321,7 @@ void em(char* dataset, int k, char* start, char* dir)
     ss = new_llna_ss(model);    //申请ss内部变量存储空间空间,也需要改---还未改----------------------
 
     //corpus_lambda = gsl_matrix_alloc(corpus->ndocs, model->k); //--
-    c_var = new_llna_corpus_var(all_corpus->nuser,all_corpus->nitem,all_corpus->ndocs,model->k);
+    c_var = new_llna_corpus_var(all_corpus->nuser, all_corpus->nitem, all_corpus->ndocs, model->k);
     init_corpus_var(c_var, start);
 
     time(&t1);

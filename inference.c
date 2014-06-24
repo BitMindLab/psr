@@ -185,7 +185,7 @@ double sigmoid(double x)
 	else if (isinf(exp(-x)))
 		return 0.0;
 	else
-		return 1 / (1 + exp(-x));
+		return 1.0 / (1.0 + exp(-x));
 }
 
 
@@ -432,6 +432,7 @@ void opt_phi(llna_corpus_var * c_var, llna_var_param * var, doc * doc, llna_mode
                  ((double) doc->count[n]) * mget(var->phi, n, i)); //sum_phi-----13
         }
     }
+    show_vect(sum_phi, "sum_phi = ");
     gsl_matrix_set_row(c_var->corpus_phi_sum, doc->d_id, sum_phi);
     gsl_vector_free(sum_phi);
 
@@ -603,10 +604,10 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	int doc_id = idoc_list.id[n];
     	gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;
 
-    	double aaa = 0.0;
+    	/*double aaa = 0.0;
     	for(int k = 0; k < mod->k; k++ )
     		aaa += vget(&tt, k);
-    	printf("is_equal 1: %lf\n", aaa);
+    	printf("is_equal 1: %lf\n", aaa);*/
 
     	gsl_vector_add(temp[2], &tt);
     }
@@ -999,8 +1000,7 @@ llna_corpus_var * new_llna_corpus_var(int nusers, int nitems, int ndocs, int k)
     c_var->Ucorpus_nu = gsl_matrix_alloc(nusers, k);
     c_var->Vcorpus_nu = gsl_matrix_alloc(nitems, k);
 
-
-    c_var->corpus_phi_sum = gsl_matrix_alloc(ndocs, k);
+    c_var->corpus_phi_sum = gsl_matrix_alloc(ndocs, k);  //这里竟然也0初始化了？
     //c_var->Vcorpus_phi_sum = gsl_matrix_alloc(nitems, k);
     return(c_var);
 }
@@ -1037,6 +1037,8 @@ void  init_corpus_var(llna_corpus_var * c_var, char* start)
 
 		gsl_matrix_set_all(c_var->Ucorpus_nu, 0.5);
 		gsl_matrix_set_all(c_var->Vcorpus_nu, 0.5);
+		gsl_matrix_set_all(c_var->corpus_phi_sum, 0.01); // phi_sum不需要满足加和为1，可以设置为0,或者一个小的数字作为平滑
+
 
 		gsl_rng_free(r);
 	} else {
@@ -1050,6 +1052,13 @@ void  init_corpus_var(llna_corpus_var * c_var, char* start)
 		scanf_matrix(fname, c_var->Ucorpus_nu);
         sprintf(fname, "%s-Vcorpus_nu.dat", start);
         scanf_matrix(fname, c_var->Vcorpus_nu);
+
+        sprintf(fname, "%s-corpus_phi_sum.dat", start);
+        scanf_matrix(fname, c_var->corpus_phi_sum);
+
+
+
+
 	}
 	// 这里没有初始化 corpus_phi_sum，
 
@@ -1525,5 +1534,8 @@ void write_c_var(llna_corpus_var * c_var, char * root)  //已经改完
 
     sprintf(filename, "%s-Vcorpus_nu.dat", root);
     printf_matrix(filename, c_var->Vcorpus_nu);
+
+    sprintf(filename, "%s-corpus_phi_sum.dat", root);
+    printf_matrix(filename, c_var->corpus_phi_sum);
 
 }

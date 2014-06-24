@@ -142,7 +142,7 @@ void show_sample(int * j, int num_triples)
  *
  */
 
-double get_zeta_ui(llna_corpus_var * c_var, int u, int i)
+double get_zeta_ui_inv(llna_corpus_var * c_var, int u, int i)
 {
     double t1;
     double zeta_ui = 0.0;
@@ -157,8 +157,11 @@ double get_zeta_ui(llna_corpus_var * c_var, int u, int i)
     	check_nan(zeta_ui, "warning: zeta_ui is nan");
     	check_nan(1.0/zeta_ui, "warning: 1/zeta_ui is nan");
     }
+	if (isinf(zeta_ui))
+		return 0.0000001;
+	else
+		return 1.0 / zeta_ui;
 
-    return zeta_ui;
 }
 
 double get_zeta_uij(llna_corpus_var * c_var, int u, int i, int j)
@@ -189,13 +192,13 @@ double expect_mult_norm(llna_corpus_var * c_var, llna_var_param * var)
     int i;
     double sum_exp = 0;
     int niter = var->Ulambda->size;
-    double zeta_ui = get_zeta_ui(c_var, var->u, var->i);
+    double zeta_ui_inv = get_zeta_ui_inv(c_var, var->u, var->i);
 
     for (i = 0; i < niter; i++)
         sum_exp += exp(0.5 * (vget(var->Ulambda, i) + vget(var->Ilambda, i)) +
         		(0.125) * (vget(var->Unu,i) + vget(var->Inu,i)));
 
-    return((1.0/zeta_ui) * sum_exp - 1.0 + log(zeta_ui));
+    return((zeta_ui_inv) * sum_exp - 1.0 - log(zeta_ui_inv));
 }
 
 
@@ -489,11 +492,11 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	int doc_id = udoc_list.id[n];
     	int doc_total = all_corpus->docs[doc_id].total;
     	int v_id = all_corpus->docs[doc_id].v_id;
-    	double zeta_ui = get_zeta_ui(c_var, var->u, v_id);
+    	double zeta_ui_inv = get_zeta_ui_inv(c_var, var->u, v_id);
 
         for (int i = 0; i < mod->k; i++)
         {
-            vset(temp[4], i, -(((double) doc_total) / zeta_ui) *
+            vset(temp[4], i, -(((double) doc_total) * zeta_ui_inv) *
                  exp(0.5 * (vget(var->Ulambda, i) + mget(c_var->Vcorpus_lambda, v_id, i))+
                 		 0.125 * (vget(var->Unu, i) + mget(c_var->Vcorpus_nu, v_id, i))));
 
@@ -586,11 +589,11 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	int doc_id = idoc_list.id[n];
     	int doc_total = all_corpus->docs[doc_id].total;
     	int u_id = all_corpus->docs[doc_id].u_id;
-    	double zeta_ui = get_zeta_ui(c_var, u_id, var->i);
+    	double zeta_ui_inv = get_zeta_ui_inv(c_var, u_id, var->i);
 
         for (int i = 0; i < mod->k; i++)
         {
-            vset(temp[4], i, -(((double) doc_total) / zeta_ui) *
+            vset(temp[4], i, -(((double) doc_total) * zeta_ui_inv) *
                  exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, i) + vget(var->Ilambda, i)) +
                 		 0.125 * ( mget(c_var->Ucorpus_nu, u_id, i) + vget(var->Inu, i))));
             check_nan(vget(temp[4], i), "warning: dIlambda--3\n");
@@ -657,9 +660,9 @@ double df_Unu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * va
     	int doc_id = udoc_list.id[n];
     	int doc_total = all_corpus->docs[doc_id].total;
     	int v_id = all_corpus->docs[doc_id].v_id;
-    	double zeta_ui = get_zeta_ui(c_var, var->u, v_id);
+    	double zeta_ui_inv = get_zeta_ui_inv(c_var, var->u, v_id);
 
-    	v -= ((0.125 * (double) doc_total) / zeta_ui) *
+    	v -= ((0.125 * (double) doc_total) * zeta_ui_inv) *
     	                 exp(0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
     	                		 0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k)));
     }
@@ -684,9 +687,9 @@ double df_Inu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * va
     	int doc_id = idoc_list.id[n];
     	int doc_total = all_corpus->docs[doc_id].total;
     	int u_id = all_corpus->docs[doc_id].u_id;
-    	double zeta_ui = get_zeta_ui(c_var, u_id, var->i);
+    	double zeta_ui_inv = get_zeta_ui_inv(c_var, u_id, var->i);
 
-    	v -= ((0.125 * (double) doc_total) / zeta_ui) *
+    	v -= ((0.125 * (double) doc_total) * zeta_ui_inv) *
     	                 exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k))+
     	                		 0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k));
     	check_nan(v, "warning: df_Inu_k is nan");
@@ -709,9 +712,9 @@ double d2f_Unu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * v
     	int doc_id = udoc_list.id[n];
     	int doc_total = all_corpus->docs[doc_id].total;
     	int v_id = all_corpus->docs[doc_id].v_id;
-    	double zeta_ui = get_zeta_ui(c_var, var->u, v_id);
+    	double zeta_ui_inv = get_zeta_ui_inv(c_var, var->u, v_id);
 
-        v += - ((0.125 * 0.125 * (double) doc_total) / zeta_ui) *
+        v += - ((0.125 * 0.125 * (double) doc_total) * zeta_ui_inv) *
         exp(0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
        		 0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k)));
 
@@ -731,9 +734,9 @@ double d2f_Inu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * v
     	int doc_id = idoc_list.id[n];
     	int doc_total = all_corpus->docs[doc_id].total;
     	int u_id = all_corpus->docs[doc_id].u_id;
-    	double zeta_ui = get_zeta_ui(c_var, u_id, var->i);
+    	double zeta_ui_inv = get_zeta_ui_inv(c_var, u_id, var->i);
 
-        v += - ((0.125 * 0.125 * (double) doc_total) / zeta_ui) *
+        v += - ((0.125 * 0.125 * (double) doc_total) * zeta_ui_inv) *
         exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k)) +
        		 0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k));
 

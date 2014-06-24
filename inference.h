@@ -112,7 +112,7 @@ void free_llna_Vvar_param(llna_var_param * v);
 void free_llna_Uvar_param(llna_var_param * v);
 double fixed_point_iter_i(int, llna_var_param *, llna_model *, doc *);
 
-double get_zeta_ui(llna_corpus_var * c_var, int u, int i);
+double get_zeta_ui_inv(llna_corpus_var * c_var, int u, int i);
 double get_zeta_uij(llna_corpus_var * c_var, int u, int i, int j);
 
 void show_vect(gsl_vector * a, char * text);

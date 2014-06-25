@@ -810,11 +810,13 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
     do
     {
         iter++;
-        nu_k = exp(log_nu_k);
+
+		nu_k = exp(log_nu_k);
+
         // assert(!isnan(nu_i));
-        if (isnan(nu_k) || nu_k > 10)
+        if (isnan(nu_k) || nu_k > 100)  // 方差太大，就没什么意义啦吧，相当于没有这个约束了。
         {
-            init_nu = 2;
+            init_nu = 100;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -824,15 +826,20 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         df = df_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
         d2f = d2f_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
 
-        printf("df = %lf, d2f=%lf, nu_k=%lf\n", df, d2f, nu_k);
+        printf("df = %lf, d2f=%lf, nu_k=%lf, log_nu_k=%lf\n", df, d2f, nu_k, log_nu_k);
 
         check_nan(df, "warning: Unu-df is nan");
         check_nan(d2f, "warning: Unu-d2f is nan");
 
         log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
+        //log_nu_k = log_nu_k + 0.03 * df * nu_k;
 
         check_nan(log_nu_k, "warning: Unu-log_nu_k is nan");
-        check_nan(exp(log_nu_k), "warning: Unu-exp(log_nu_k) is nan");
+        if (isinf(exp(log_nu_k)))
+        	log_nu_k = log(100);
+
+
+        //check_nan(exp(log_nu_k), "warning: Unu-exp(log_nu_k) is nan");
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
 
@@ -871,7 +878,9 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         check_nan(df, "warning: Inu-df is nan");
         check_nan(d2f, "warning: Inu-d2f is nan");
 
-        log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
+        //log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
+        log_nu_k = log_nu_k + 0.03 * df * nu_k;
+
         check_nan(log_nu_k, "warning: Inu-log_nu_k is nan");
         check_nan(exp(log_nu_k), "warning: Inu-exp(log_nu_k) is nan");
     }
@@ -1037,7 +1046,7 @@ void  init_corpus_var(llna_corpus_var * c_var, char* start)
 
 		gsl_matrix_set_all(c_var->Ucorpus_nu, 0.5);
 		gsl_matrix_set_all(c_var->Vcorpus_nu, 0.5);
-		gsl_matrix_set_all(c_var->corpus_phi_sum, 0.01); // phi_sum不需要满足加和为1，可以设置为0,或者一个小的数字作为平滑
+		gsl_matrix_set_all(c_var->corpus_phi_sum, 0.001); // phi_sum不需要满足加和为1，可以设置为0,或者一个小的数字作为平滑
 
 
 		gsl_rng_free(r);
@@ -1123,7 +1132,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	if (check_nan(vget(df, 1), "warning: dUlambda is nan") == 0)
     	{
         	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
-        	gsl_vector_add(var->Ulambda, df);   //
+        	gsl_vector_add(var->Ulambda, df);   // lambda = lambda + learn_rate * df
     		show_vect(var->Ulambda, "Ulambda=");
     		gsl_matrix_set_row(c_var->Ucorpus_lambda, var->u, var->Ulambda);
     	}
@@ -1152,7 +1161,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	if (check_nan(vget(df, 1), "warning: dIlambda is nan") == 0)
     	{
         	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
-        	gsl_vector_add(var->Ilambda, df);   //
+        	gsl_vector_add(var->Ilambda, df);   // lambda = lambda + learn_rate * df
     		show_vect(var->Ilambda, "Ilambda=");
     		gsl_matrix_set_row(c_var->Vcorpus_lambda, var->i, var->Ilambda);
     	}

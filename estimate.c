@@ -56,7 +56,7 @@ extern llna_params PARAMS;
 
 void expectation(corpus* all_corpus, llna_model* model, llna_ss* ss,
                  double* avg_niter, double* total_lhood,
-                 llna_corpus_var * c_var, short reset_var, double* converged_pct)
+                 llna_corpus_var * c_var, double* converged_pct)
 {
     double lhood, total;
 
@@ -186,18 +186,12 @@ void maximization(llna_model* model, llna_ss * ss)
     double sum;
 
     // 1. mean maximization  更新 model->mu
-
-
-
-
     for (i = 0; i < model->k; i++) {
     	vset(model->Umu, i, vget(ss->Umu_ss, i) / ss->ndata);
     	vset(model->Vmu, i, vget(ss->Vmu_ss, i) / ss->ndata);
     }
 
-
-    // 2. covariance maximization
-
+    // 2.1 covariance maximization
     for (i = 0; i < model->k; i++)
     {
         for (j = 0; j < model->k; j++)
@@ -217,6 +211,7 @@ void maximization(llna_model* model, llna_ss * ss)
     matrix_inverse(model->Ucov, model->Uinv_cov);
     model->Ulog_det_inv_cov = log_det(model->Uinv_cov);
 
+    // 2.2 covariance maximization
     for (i = 0; i < model->k; i++)
     {
         for (j = 0; j < model->k; j++)
@@ -236,14 +231,13 @@ void maximization(llna_model* model, llna_ss * ss)
     matrix_inverse(model->Vcov, model->Vinv_cov);
     model->Vlog_det_inv_cov = log_det(model->Vinv_cov);
 
-    // 3. topic maximization  更新 model->log_beta
 
+    // 3. topic maximization  更新 model->log_beta
     for (i = 0; i < model->k; i++)
     {
         sum = 0;
         for (j = 0; j < model->log_beta->size2; j++)
             sum += mget(ss->beta_ss, i, j);
-
 
         if (sum == 0) sum = safe_log(sum) * model->log_beta->size2;
         else sum = safe_log(sum);
@@ -251,14 +245,6 @@ void maximization(llna_model* model, llna_ss * ss)
         for (j = 0; j < model->log_beta->size2; j++)
             mset(model->log_beta, i, j, safe_log(mget(ss->beta_ss, i, j)) - sum);
     }
-
-
-    // 5. update cov
-    //model->cov = ss->cov_ss / ss->nratings;  //可以让其为定值，不更新，因为有时竟然会更新得特别大
-
-
-
-
 }
 
 
@@ -290,17 +276,12 @@ void em(char* dataset, int k, char* start, char* dir)
     int iteration = 0;
     double convergence = 1, lhood = 0, lhood_old = 0;
     corpus* all_corpus;
-    //corpus* corpus;  //---
-    //ratings* r;
-    //ratings* r_u;
-    //ratings* r_v;
     llna_model *model;
     llna_ss* ss;  //这应该也需要更改
     time_t t1,t2;
     double avg_niter, converged_pct, old_conv = 0;
 
     llna_corpus_var * c_var;
-    short reset_var = 1;
 
     // read the data and make the directory
 
@@ -340,25 +321,6 @@ void em(char* dataset, int k, char* start, char* dir)
     write_llna_model(model, string);  //已改
     write_c_var(c_var, string);
 
-	//double rmse_start;
-	//gsl_vector * predict_r;
-	//predict_r = gsl_vector_alloc(r->nratings);
-    //predict_y(c_var->Ucorpus_lambda,c_var->Vcorpus_lambda, r, predict_r);
-    //get_rmse(r, predict_r,&rmse_start);
-
-	/*
-    FILE* fileptr;
-    char filename[200];
-    sprintf(filename, "%s-rmse.dat", string);
-    fileptr = fopen(filename, "w");
-    fprintf(fileptr, "%lf\n", rmse_start);
-    fclose(fileptr);
-    */
-
-
-    //gsl_vector * rmse;
-
-    //rmse = gsl_vector_alloc(3); //最好是4
     //===========这里是核心框架=======
     do
     {
@@ -366,39 +328,29 @@ void em(char* dataset, int k, char* start, char* dir)
         printf("***** EM ITERATION %d *****\n", iteration);
 
         //===========E-step=======
-/*        expectation(corpus, model, ss, &avg_niter, &lhood,
-                    corpus_lambda, corpus_nu, corpus_phi_sum,
-                    reset_var, &converged_pct);*/
         expectation(all_corpus, model, ss, &avg_niter, &lhood,
-                    c_var, reset_var, &converged_pct);
+                    c_var, &converged_pct);
         time(&t2);
         convergence = (lhood_old - lhood) / lhood_old; //lhood 应该要大于 lhood_old，才趋向收敛
         fprintf(lhood_fptr, "%d %5.5e %5.5e %5ld %5.5f %1.5f\n",
                 iteration, lhood, convergence, (int) t2 - t1, avg_niter, converged_pct);
 
-        if (((iteration % PARAMS.lag)==0) || isnan(lhood))
-        {
-            sprintf(string, "%s/%03d", dir, iteration + 1 + iter_start);
-            write_llna_model(model, string);
-            write_c_var(c_var, string);
-        }
-        time(&t1);
-
         printf("convergence is :%f\n",convergence);
-        /*if (convergence < 0)  //如果收敛
-        {
-            reset_var = 0;  //这是干嘛的？--------------
-            if (PARAMS.var_max_iter > 0)
-                PARAMS.var_max_iter += 10;
-            else PARAMS.var_convergence /= 10;
-        }
-        else  //如果还未收敛，继续进行m步，convergence迭代过程应该会变小
-        {*/
-        	//===========M-step=======
-            maximization(model, ss);
-            lhood_old = lhood;
-            reset_var = 1;  //这是干嘛的
-            iteration++;
+
+		//===========M-step=======
+		maximization(model, ss);
+		lhood_old = lhood;
+		iteration++;
+
+
+		if (((iteration % PARAMS.lag)==0) || isnan(lhood))
+		{
+			sprintf(string, "%s/%03d", dir, iteration + 1 + iter_start);
+			write_llna_model(model, string);
+			write_c_var(c_var, string);
+		}
+		time(&t1);
+
         //}
 
         fflush(lhood_fptr);

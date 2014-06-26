@@ -929,7 +929,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
     // 鉴于合理性，保证nu不会发散，以至于特别大，这里强制设定nu《10.
     // 但是不能解决根本问题，根本问题是 本不应该发散的
     double tt = exp(log_nu_k);
-    //if (tt < 10 )
+    if (tt < 10 && tt > 0.0001)
     	vset(var->Unu, k, tt); // else 就不更新
 
 }
@@ -947,7 +947,7 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         iter++;
         nu_k = exp(log_nu_k);
         // assert(!isnan(nu_i));
-        if (isnan(nu_k) || nu_k > 10 || nu_k < 0.001)
+        if (isnan(nu_k) || nu_k > 10 || nu_k < 0.0001)
         {
             init_nu = 0.5;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);

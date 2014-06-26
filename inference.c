@@ -888,7 +888,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
 		// 方差太大，就没什么意义啦吧，相当于没有这个约束了。
 		// 另外nu_k太大，
 		// 由于zeta_ui的存在，df不会绝对值很大
-        if (isnan(nu_k) || nu_k > 10)
+        if (isnan(nu_k) || nu_k > 10 || nu_k < 0.0001)
         {
             init_nu = 0.5;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
@@ -898,18 +898,24 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // f = f_nu_i(nu_i, i, var, mod, d);
         // printf("%5.5f  %5.5f \n", nu_i, f);
         df = df_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
-        d2f = d2f_Unu_k(nu_k, k, c_var, var, mod, all_corpus);
+        d2f = d2f_Unu_k(nu_k, k, c_var, var, mod, all_corpus);  // 这里不能是inf
+
+        if(isinf(df) || isinf(d2f))
+        {
+    		printf("warning: df or d2f is inf\n");
+    		exit(EXIT_FAILURE);
+        }
 
         printf("df = %lf, d2f=%lf, nu_k=%lf, log_nu_k=%lf\n", df, d2f, nu_k, log_nu_k);
 
         check_nan(df, "warning: Unu-df is nan");
         check_nan(d2f, "warning: Unu-d2f is nan");
 
-/*        if (isinf(df))
-        	log_nu_k = log(100);*/
-
-        log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
-        //log_nu_k = log_nu_k + 0.03 * df * nu_k;
+        // 选择性更新，优先采用newton法更新，newton不适合，才采用最速梯度法更新
+        if(abs((d2f*nu_k*nu_k+df*nu_k)) > 0.0001)
+        	log_nu_k = log_nu_k - (df * nu_k) / (d2f * nu_k * nu_k + df * nu_k);
+        else
+        	log_nu_k = log_nu_k + 0.03 * df * nu_k;
 
         check_nan(log_nu_k, "warning: Unu-log_nu_k is nan");
         if (isinf(exp(log_nu_k)))
@@ -941,7 +947,7 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         iter++;
         nu_k = exp(log_nu_k);
         // assert(!isnan(nu_i));
-        if (isnan(nu_k) || nu_k > 10)
+        if (isnan(nu_k) || nu_k > 10 || nu_k < 0.001)
         {
             init_nu = 0.5;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
@@ -953,13 +959,22 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         df = df_Inu_k(nu_k, k, c_var, var, mod, all_corpus);
         d2f = d2f_Inu_k(nu_k, k, c_var, var, mod, all_corpus);  // 这里df和d2f可能是inf或-inf
 
+        if(isinf(df) || isinf(d2f))
+        {
+    		printf("warning: df or d2f is inf\n");
+    		exit(EXIT_FAILURE);
+        }
+
         printf("df = %lf, d2f=%lf, nu_k=%lf, log_nu_k=%lf\n", df, d2f, nu_k, log_nu_k);
 
         check_nan(df, "warning: Inu-df is nan");
         check_nan(d2f, "warning: Inu-d2f is nan");
 
-        log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
-        //log_nu_k = log_nu_k + 0.03 * df * nu_k;
+        // 选择性更新，优先采用newton法更新，newton不适合，才采用最速梯度法更新
+        if(abs((d2f * nu_k * nu_k + df * nu_k)) > 0.0001)
+        	log_nu_k = log_nu_k - (df * nu_k) / (d2f * nu_k * nu_k + df * nu_k);
+        else
+        	log_nu_k = log_nu_k + 0.03 * df * nu_k;
 
         check_nan(log_nu_k, "warning: Inu-log_nu_k is nan");
         if (isinf(exp(log_nu_k)))
@@ -969,7 +984,7 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
     while (fabs(df) > NEWTON_THRESH && iter < 100);
 
     double tt = exp(log_nu_k);
-    //if (tt < 10 )
+    if (tt < 10 && tt > 0.0001)
         vset(var->Inu, k, tt); // else 就不更新
 }
 

@@ -905,8 +905,8 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         check_nan(df, "warning: Unu-df is nan");
         check_nan(d2f, "warning: Unu-d2f is nan");
 
-        if (isinf(df))
-        	log_nu_k = log(100);
+/*        if (isinf(df))
+        	log_nu_k = log(100);*/
 
         log_nu_k = log_nu_k - (df*nu_k)/(d2f*nu_k*nu_k+df*nu_k);
         //log_nu_k = log_nu_k + 0.03 * df * nu_k;
@@ -923,7 +923,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
     // 鉴于合理性，保证nu不会发散，以至于特别大，这里强制设定nu《10.
     // 但是不能解决根本问题，根本问题是 本不应该发散的
     double tt = exp(log_nu_k);
-    if (tt < 10 )
+    //if (tt < 10 )
     	vset(var->Unu, k, tt); // else 就不更新
 
 }
@@ -931,7 +931,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
 void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model * mod, corpus * all_corpus)
 {
 
-    double init_nu = 2;
+    double init_nu = 1.0;
     double nu_k = 0, log_nu_k = 0, df = 0, d2f = 0;
     int iter = 0;
 
@@ -943,7 +943,7 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // assert(!isnan(nu_i));
         if (isnan(nu_k) || nu_k > 10)
         {
-            init_nu = 2;
+            init_nu = 0.5;
             printf("warning : nu is nan; new init = %5.5f\n", init_nu);
             log_nu_k = log(init_nu);
             nu_k = init_nu;
@@ -952,6 +952,9 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         // printf("%5.5f  %5.5f \n", nu_i, f);
         df = df_Inu_k(nu_k, k, c_var, var, mod, all_corpus);
         d2f = d2f_Inu_k(nu_k, k, c_var, var, mod, all_corpus);  // 这里df和d2f可能是inf或-inf
+
+        printf("df = %lf, d2f=%lf, nu_k=%lf, log_nu_k=%lf\n", df, d2f, nu_k, log_nu_k);
+
         check_nan(df, "warning: Inu-df is nan");
         check_nan(d2f, "warning: Inu-d2f is nan");
 
@@ -959,12 +962,14 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         //log_nu_k = log_nu_k + 0.03 * df * nu_k;
 
         check_nan(log_nu_k, "warning: Inu-log_nu_k is nan");
-        check_nan(exp(log_nu_k), "warning: Inu-exp(log_nu_k) is nan");
+        if (isinf(exp(log_nu_k)))
+        	log_nu_k = log(0.5);  //等价与nu_k = 0.5
+
     }
     while (fabs(df) > NEWTON_THRESH && iter < 100);
 
     double tt = exp(log_nu_k);
-    if (tt < 10 )
+    //if (tt < 10 )
         vset(var->Inu, k, tt); // else 就不更新
 }
 

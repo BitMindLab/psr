@@ -912,7 +912,7 @@ void opt_Unu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         check_nan(d2f, "warning: Unu-d2f is nan");
 
         // 选择性更新，优先采用newton法更新，newton不适合，才采用最速梯度法更新
-        if(abs((d2f*nu_k*nu_k+df*nu_k)) > 0.0001)
+        if(fabs(d2f*nu_k*nu_k+df*nu_k) > 0.0001)
         	log_nu_k = log_nu_k - (df * nu_k) / (d2f * nu_k * nu_k + df * nu_k);
         else
         	log_nu_k = log_nu_k + 0.03 * df * nu_k;
@@ -971,7 +971,7 @@ void opt_Inu_k(int k, llna_corpus_var * c_var, llna_var_param * var, llna_model 
         check_nan(d2f, "warning: Inu-d2f is nan");
 
         // 选择性更新，优先采用newton法更新，newton不适合，才采用最速梯度法更新
-        if(abs((d2f * nu_k * nu_k + df * nu_k)) > 0.0001)
+        if(fabs((d2f * nu_k * nu_k + df * nu_k)) > 0.0001)
         	log_nu_k = log_nu_k - (df * nu_k) / (d2f * nu_k * nu_k + df * nu_k);
         else
         	log_nu_k = log_nu_k + 0.03 * df * nu_k;

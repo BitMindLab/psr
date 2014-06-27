@@ -345,7 +345,7 @@ void em(char* dataset, int k, char* start, char* dir)
 
 		if (((iteration % PARAMS.lag)==0) || isnan(lhood))
 		{
-			sprintf(string, "%s/%03d", dir, iteration + 1 + iter_start);
+			sprintf(string, "%s/%03d", dir, iteration + iter_start);
 			write_llna_model(model, string);
 			write_c_var(c_var, string);
 		}

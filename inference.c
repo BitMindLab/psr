@@ -1252,9 +1252,15 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	//update_u   Ulambda
 
     	df_Ulambda(c_var, var, mod, df, all_corpus);  // df 是导数
+    	int is_legal = 1;
     	for (int i = 0; i < mod->k; i++)
+    	{
     		check_nan(vget(df, i), "warning: dUlambda is nan");
-    	if (check_nan(vget(df, 1), "warning: dUlambda is nan") == 0)
+    		if(isinf(vget(df, i)))
+    			is_legal = 0;
+    	}
+
+    	if (is_legal == 1)
     	{
         	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
         	gsl_vector_add(var->Ulambda, df);   // lambda = lambda + learn_rate * df
@@ -1278,9 +1284,14 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
     	// update_i
     	df_Ilambda(c_var, var, mod, df, all_corpus);  // df 是导数
+    	is_legal = 1;
     	for (int i = 0; i < mod->k; i++)
+    	{
     		check_nan(vget(df, i), "warning: dIlambda is nan");
-    	if (check_nan(vget(df, 1), "warning: dIlambda is nan") == 0)
+    		if(isinf(vget(df, i)))
+    			is_legal = 0;
+    	}
+    	if (is_legal == 1)
     	{
         	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
         	gsl_vector_add(var->Ilambda, df);   // lambda = lambda + learn_rate * df

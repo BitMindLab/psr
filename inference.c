@@ -1169,8 +1169,8 @@ void  init_corpus_var(llna_corpus_var * c_var, char* start)
 	    	}
 	    }
 
-		gsl_matrix_set_all(c_var->Ucorpus_nu, 0.5);
-		gsl_matrix_set_all(c_var->Vcorpus_nu, 0.5);
+		gsl_matrix_set_all(c_var->Ucorpus_nu, 1);
+		gsl_matrix_set_all(c_var->Vcorpus_nu, 1);
 		gsl_matrix_set_all(c_var->corpus_phi_sum, 0.001); // phi_sum不需要满足加和为1，可以设置为0,或者一个小的数字作为平滑
 
 
@@ -1263,6 +1263,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	}
 
 
+# if defined(UPDATE_NU)
     	// Unu
     	opt_Unu(c_var, var, mod, all_corpus);
     	for (int i = 0; i < mod->k; i++)
@@ -1272,10 +1273,8 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     		show_vect(var->Unu, "Unu=");
     		gsl_matrix_set_row(c_var->Ucorpus_nu, var->u, var->Unu);
     	}
-
-
+#endif
     	opt_phi(c_var, var, &doc, mod);
-
 
     	// update_i
     	df_Ilambda(c_var, var, mod, df, all_corpus);  // df 是导数
@@ -1290,6 +1289,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	}
 
 
+# if defined(UPDATE_NU)
     	// Inu
     	opt_Inu(c_var, var, mod, all_corpus);
     	for (int i = 0; i < mod->k; i++)
@@ -1299,6 +1299,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     		show_vect(var->Inu, "Inu=");
     		gsl_matrix_set_row(c_var->Vcorpus_nu, var->i, var->Inu);
     	}
+#endif
 
 
 

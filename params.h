@@ -19,6 +19,7 @@
 
 #ifndef PARAMS_H
 #define PARAMS_H
+#define UPDATE_NU
 
 #define DEBUG
 //#define SHOW_PREDICTION
@@ -27,6 +28,7 @@
 #define SHRINK 1
 #define NUM_SAMPLE 20
 #define COMMON_TOPIC 2
+
 
 typedef struct llna_params
 {

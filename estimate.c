@@ -297,7 +297,6 @@ void em(char* dataset, int k, char* start, char* dir)
     lhood_fptr = fopen(string, "w");
 
     // run em
-
     model = em_initial_model(k, all_corpus, start); //因为只采用random初始化，因此只用到了topic数目k
     ss = new_llna_ss(model);    //申请ss内部变量存储空间空间,也需要改---还未改----------------------
 
@@ -306,8 +305,6 @@ void em(char* dataset, int k, char* start, char* dir)
     init_corpus_var(c_var, start);
 
     time(&t1);
-
-
 
     int iter_start;
     if (atoi(start) != NULL) {

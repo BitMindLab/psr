@@ -26,6 +26,7 @@
 #define MLE 0
 #define SHRINK 1
 #define NUM_SAMPLE 20
+#define COMMON_TOPIC 2
 
 typedef struct llna_params
 {

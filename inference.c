@@ -747,17 +747,23 @@ double df_Unu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * va
     	int v_id = all_corpus->docs[doc_id].v_id;
     	double zeta_ui = get_zeta_ui(c_var, var->u, v_id);
 
-    	double tt;
-    	if(isinf(zeta_ui))
+        double tt = 0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
+        		0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k));
+
+    	if(isinf(zeta_ui) || isinf(tt))
     		tt = 1.0 / mod->k;
     	else
     	{
-            tt = 0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
-            		0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k));
             tt = exp(tt) / zeta_ui;
     	}
 
     	v -= 0.125 * (double) doc_total * tt;
+
+        if(isinf(v))
+        {
+    		printf("warning: v is inf\n");
+    		exit(EXIT_FAILURE);
+        }
     }
 
 
@@ -782,17 +788,22 @@ double df_Inu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * va
     	int u_id = all_corpus->docs[doc_id].u_id;
     	double zeta_ui = get_zeta_ui(c_var, u_id, var->i);
 
-    	double tt;
-    	if(isinf(zeta_ui))
+    	double tt = 0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k))+
+				0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k);
+    	if(isinf(zeta_ui) || isinf(tt))
     		tt = 1.0 / mod->k;
     	else
     	{
-    		tt = 0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k))+
-    				0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k);
     		tt = exp(tt) / zeta_ui;
     	}
 
     	v -= 0.125 * (double) doc_total * tt;
+
+        if(isinf(v))
+        {
+    		printf("warning: v is inf\n");
+    		exit(EXIT_FAILURE);
+        }
     	check_nan(v, "warning: df_Inu_k is nan");
     }
 
@@ -815,12 +826,12 @@ double d2f_Unu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * v
     	int v_id = all_corpus->docs[doc_id].v_id;
     	double zeta_ui = get_zeta_ui(c_var, var->u, v_id);
 
-    	double tt;
-    	if(isinf(zeta_ui))
+    	double tt = exp(0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
+    			0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k))) ;
+    	if(isinf(zeta_ui) || isinf(tt))
     		tt = 1.0 / mod->k;
     	else
-    		tt = exp(0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
-    	       		 0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k))) / zeta_ui;
+    		tt = exp(tt) / zeta_ui;
 
         v += - 0.125 * 0.125 * (double) doc_total * tt;
 
@@ -842,12 +853,12 @@ double d2f_Inu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * v
     	int u_id = all_corpus->docs[doc_id].u_id;
     	double zeta_ui = get_zeta_ui(c_var, u_id, var->i);
 
-    	double tt;
-    	if(isinf(zeta_ui))
+    	double tt = exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k)) +
+	       		 0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k));
+    	if(isinf(zeta_ui) || isinf(tt))
     		tt = 1.0 / mod->k;
     	else
-    		tt = exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k)) +
-    	       		 0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k)) / zeta_ui;
+    		tt = exp(tt) / zeta_ui;
 
         v += - 0.125 * 0.125 * (double) doc_total * tt;
 

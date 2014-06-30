@@ -307,10 +307,7 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
     {
     	j_id = var->j[i];
     	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
-    	if (j_id > c_var->Vcorpus_lambda->size1)
-    	{
-    		printf("warning: out of range in lhood_bnd 1");
-    	}
+    	assert (j_id < c_var->Vcorpus_lambda->size1);
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
         t1 =sigmoid(zeta_uij);
 
@@ -358,9 +355,6 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
         }
     }
     var->lhood = lhood;
-
-
-
 }
 
 
@@ -571,12 +565,12 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
 
         for (int i = 0; i < mod->k; i++)
         {
-        	double tt;
-        	if(isinf(zeta_ui))
+        	double tt = exp(0.5 * (vget(var->Ulambda, i) + mget(c_var->Vcorpus_lambda, v_id, i))+
+    				0.125 * (vget(var->Unu, i) + mget(c_var->Vcorpus_nu, v_id, i)));
+        	if(isinf(zeta_ui) || isinf(tt))
         		tt = 1.0 / mod->k;
         	else
-        		tt = exp(0.5 * (vget(var->Ulambda, i) + mget(c_var->Vcorpus_lambda, v_id, i))+
-        				0.125 * (vget(var->Unu, i) + mget(c_var->Vcorpus_nu, v_id, i))) / zeta_ui;
+        		tt = tt / zeta_ui;
 
             vset(temp[4], i, -(double) doc_total * tt);
 
@@ -673,12 +667,12 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
 
         for (int i = 0; i < mod->k; i++)
         {
-        	double tt;
-        	if(isinf(zeta_ui))
+        	double tt = exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, i) + vget(var->Ilambda, i)) +
+    				0.125 * ( mget(c_var->Ucorpus_nu, u_id, i) + vget(var->Inu, i)));
+        	if(isinf(zeta_ui) || isinf(tt))
         		tt = 1.0 / mod->k;
         	else
-        		tt = exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, i) + vget(var->Ilambda, i)) +
-        				0.125 * ( mget(c_var->Ucorpus_nu, u_id, i) + vget(var->Inu, i))) / zeta_ui;
+        		tt = tt / zeta_ui;
 
             vset(temp[4], i, -(double) doc_total * tt);
             check_nan(vget(temp[4], i), "warning: dIlambda--3\n");
@@ -1257,7 +1251,11 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	{
     		check_nan(vget(df, i), "warning: dUlambda is nan");
     		if(isinf(vget(df, i)))
+    		{
     			is_legal = 0;
+    			break;
+    		}
+
     	}
 
     	if (is_legal == 1)
@@ -1289,7 +1287,11 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	{
     		check_nan(vget(df, i), "warning: dIlambda is nan");
     		if(isinf(vget(df, i)))
+    		{
     			is_legal = 0;
+    			break;
+    		}
+
     	}
     	if (is_legal == 1)
     	{

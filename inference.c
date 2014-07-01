@@ -302,6 +302,26 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
 
     // 2.E[log p(R|eta1, eta2)]
 
+# if defined(MAX_MARGIN)
+    double t1; int j_id;
+    for (int i = 0; i < var->num_triples; i++)
+    {
+    	j_id = var->j[i];
+    	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
+    	printf("zeta_uij = %lf;\t", zeta_uij);  //仅仅为了显示输出值
+
+    	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
+        gsl_blas_dcopy(var->Ilambda, temp[2]);
+        gsl_vector_sub(temp[2], &Jlambda);  //temp[2] = Ilambda-Jlambda
+        gsl_blas_ddot(var->Ulambda, temp[2], &t1);
+        if(t1 < 1)
+        {
+        	lhood += t1 - 1;
+        } // else 导数0
+    }
+    printf("\n");
+
+#else
     double t1, t2, t3; int j_id;
     for (int i = 0; i < var->num_triples; i++)
     {
@@ -319,6 +339,7 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
         lhood += log(1 - t1) - t1 * (t3 - t2 - zeta_uij);
     }
     printf("\n");
+#endif
 
     // 3.E[log p(z_n | \eta)] + E[log p(w_n | \beta)] + H(q(z_n | \phi_n))
     // 这里只考虑一个文档，在total= 所有lhood的累加，得到所有的lhood
@@ -517,7 +538,25 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	check_nan(vget(temp[0], i), "warning: dUlambda--0\n");
 
 
+
     //2. compute zeta_uij / (1 + zeta_uij) * (Ilambda - Jlambda) = temp[1]
+# if defined(MAX_MARGIN)
+    gsl_vector_set_zero(temp[1]);
+    double t1; int j_id;
+    for (int i = 0; i < var->num_triples; i++)
+    {
+    	j_id = var->j[i];
+    	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
+    	gsl_blas_dcopy(var->Ilambda, temp[2]);
+        gsl_vector_sub(temp[2], &Jlambda);  //temp[2] = Ilambda-Jlambda
+        gsl_blas_ddot(var->Ulambda, temp[2], &t1);
+        if(t1 < 1)
+        {
+        	gsl_vector_add(temp[1],temp[2]);
+        } // else 导数0
+    }
+
+#else
     gsl_vector_set_zero(temp[1]);
     double t1; int j_id;
     for (int i = 0; i < var->num_triples; i++)
@@ -536,6 +575,9 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
 
         gsl_vector_add(temp[1],temp[2]);
     }
+
+#endif
+
 
     for (int i = 0; i < mod->k; i++)
     	check_nan(vget(temp[1], i), "warning: dUlambda--1\n");
@@ -617,6 +659,24 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
 
 
     //2. compute temp[1]
+# if defined(MAX_MARGIN)
+    gsl_vector_set_zero(temp[1]);
+    double t1; int j_id;
+    for (int i = 0; i < var->num_triples; i++)
+    {
+        j_id = var->j[i];
+        gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
+        gsl_blas_dcopy(var->Ilambda, temp[2]);
+        gsl_vector_sub(temp[2], &Jlambda);  //temp[2] = Ilambda-Jlambda
+        gsl_blas_ddot(var->Ulambda, temp[2], &t1);
+
+        if(t1 < 1)
+        {
+            gsl_vector_add(temp[1], var->Ilambda);
+        } // else 导数0
+    }
+
+#else
     gsl_vector_set_zero(temp[1]);
     double t1; int j_id;
     for (int i = 0; i < var->num_triples; i++)
@@ -634,6 +694,7 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
         //exit();
         //goto error_end;
     }
+#endif
 
     for (int i = 0; i < mod->k; i++)
     	check_nan(vget(temp[1], i), "warning: dIlambda error in part 1\n");

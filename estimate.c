@@ -185,6 +185,7 @@ void maximization(llna_model* model, llna_ss * ss)
     int i, j;
     double sum;
 
+# if defined(UPDATE_MOD)
     // 1. mean maximization  更新 model->mu
     for (i = 0; i < model->k; i++) {
     	vset(model->Umu, i, vget(ss->Umu_ss, i) / ss->ndata);
@@ -231,6 +232,8 @@ void maximization(llna_model* model, llna_ss * ss)
     matrix_inverse(model->Vcov, model->Vinv_cov);
     model->Vlog_det_inv_cov = log_det(model->Vinv_cov);
 
+
+# endif
 
     // 3. topic maximization  更新 model->log_beta
     for (i = 0; i < model->k; i++)
@@ -336,6 +339,7 @@ void em(char* dataset, int k, char* start, char* dir)
 
 		//===========M-step=======
 		maximization(model, ss);
+
 		lhood_old = lhood;
 		iteration++;
 
@@ -563,10 +567,9 @@ int main(int argc, char* argv[])
 
             em(argv[2], atoi(argv[3]), argv[4], argv[5]);
 
-            inference("ap_User_URL.dat", "ap_User_URL.dat", 1000, "final","out");
-            //inference("ap_author.dat","ap_pub.dat","ap_rating_test.dat","final","out");
-            //inference("ap_user.dat","ap_movie.dat","ap_rating_test1.dat","final","out");
-            //inference("ap_user.dat","ap_item.dat","ap_rating_test1.dat","final","out");
+            inference("ap_User_URL.dat", "ap_User_URL.dat", 5000, "final","out");
+            inference("ap_User_URL_mid.dat", "ap_User_URL_mid.dat", 60000, "final","out");
+            inference("ap_User_URL_mid.dat", "ap_User_URL_mid.dat", 60000, "final","out");
 
             return(0);
         }

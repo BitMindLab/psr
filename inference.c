@@ -306,8 +306,9 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
     for (int i = 0; i < var->num_triples; i++)
     {
     	j_id = var->j[i];
-    	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
     	assert (j_id < c_var->Vcorpus_lambda->size1);
+    	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
+    	printf("zeta_uij = %lf;\t", zeta_uij);
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
         t1 =sigmoid(zeta_uij);
 
@@ -317,6 +318,7 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
 
         lhood += log(1 - t1) - t1 * (t3 - t2 - zeta_uij);
     }
+    printf("\n");
 
     // 3.E[log p(z_n | \eta)] + E[log p(w_n | \beta)] + H(q(z_n | \phi_n))
     // 这里只考虑一个文档，在total= 所有lhood的累加，得到所有的lhood
@@ -567,7 +569,7 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
         {
         	double tt = exp(0.5 * (vget(var->Ulambda, i) + mget(c_var->Vcorpus_lambda, v_id, i))+
     				0.125 * (vget(var->Unu, i) + mget(c_var->Vcorpus_nu, v_id, i)));
-        	if(isinf(zeta_ui) || isinf(tt))
+        	if(isinf(zeta_ui) || isinf(tt) || fabs(zeta_ui) < 0.00001)
         		tt = 1.0 / mod->k;
         	else
         		tt = tt / zeta_ui;
@@ -669,7 +671,7 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
         {
         	double tt = exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, i) + vget(var->Ilambda, i)) +
     				0.125 * ( mget(c_var->Ucorpus_nu, u_id, i) + vget(var->Inu, i)));
-        	if(isinf(zeta_ui) || isinf(tt))
+        	if(isinf(zeta_ui) || isinf(tt) || fabs(zeta_ui) < 0.00001)
         		tt = 1.0 / mod->k;
         	else
         		tt = tt / zeta_ui;
@@ -744,7 +746,7 @@ double df_Unu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * va
         double tt = exp(0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
         		0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k)));
 
-    	if(isinf(zeta_ui) || isinf(tt))
+    	if(isinf(zeta_ui) || isinf(tt) || fabs(zeta_ui) < 0.00001)
     		tt = 1.0 / mod->k;
     	else
     	{
@@ -784,7 +786,7 @@ double df_Inu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * va
 
     	double tt = exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k))+
     			0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k));
-    	if(isinf(zeta_ui) || isinf(tt))
+    	if(isinf(zeta_ui) || isinf(tt) || fabs(zeta_ui) < 0.00001)
     		tt = 1.0 / mod->k;
     	else
     	{
@@ -822,7 +824,7 @@ double d2f_Unu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * v
 
     	double tt = exp(0.5 * (vget(var->Ulambda, k) + mget(c_var->Vcorpus_lambda, v_id, k))+
     			0.125 * (nu_k + mget(c_var->Vcorpus_nu, v_id, k)));
-    	if(isinf(zeta_ui) || isinf(tt))
+    	if(isinf(zeta_ui) || isinf(tt) || fabs(zeta_ui) < 0.00001)
     		tt = 1.0 / mod->k;
     	else
     		tt = tt / zeta_ui;
@@ -855,7 +857,7 @@ double d2f_Inu_k(double nu_k, int k, llna_corpus_var * c_var, llna_var_param * v
 
     	double tt = exp(0.5 * (mget(c_var->Ucorpus_lambda, u_id, k) + vget(var->Ilambda, k)) +
 	       		 0.125 * (mget(c_var->Ucorpus_nu, u_id, k) + nu_k));
-    	if(isinf(zeta_ui) || isinf(tt))
+    	if(isinf(zeta_ui) || isinf(tt) || fabs(zeta_ui) < 0.00001)
     		tt = 1.0 / mod->k;
     	else
     		tt = tt / zeta_ui;
@@ -1255,7 +1257,6 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     			is_legal = 0;
     			break;
     		}
-
     	}
 
     	if (is_legal == 1)

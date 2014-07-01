@@ -20,6 +20,7 @@
 #ifndef PARAMS_H
 #define PARAMS_H
 #define UPDATE_NU
+#define MAX_MARGIN
 
 #define DEBUG
 //#define SHOW_PREDICTION

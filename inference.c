@@ -303,14 +303,20 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
     // 2.E[log p(R|eta1, eta2)]
 
 # if defined(MAX_MARGIN)
-    double t1; int j_id;
+    double t1, t2; int j_id;
     for (int i = 0; i < var->num_triples; i++)
     {
     	j_id = var->j[i];
-    	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
-    	printf("zeta_uij = %lf;\t", zeta_uij);  //仅仅为了显示输出值
-
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
+
+    	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
+    	gsl_blas_ddot(var->Ulambda, var->Ilambda, &t1);
+    	gsl_blas_ddot(var->Ulambda, &Jlambda, &t2);
+    	printf("t1 = %lf\tt2 = %lf\tzeta_uij = %lf;\t", t1, t2,zeta_uij);  //仅仅为了显示输出值
+    	assert(fabs(t1 - t2 + zeta_uij) < 0.001);
+
+
+
         gsl_blas_dcopy(var->Ilambda, temp[2]);
         gsl_vector_sub(temp[2], &Jlambda);  //temp[2] = Ilambda-Jlambda
         gsl_blas_ddot(var->Ulambda, temp[2], &t1);
@@ -1302,12 +1308,9 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	// 1. sample u i j
     	SampleTriple(all_corpus, var); // get * j
     	show_sample(var->j, var->num_triples);
-    	// 2. update
+
+    	// 2.1 update_u
     	opt_phi(c_var, var, &doc, mod); // 计算 var->phi  顺便更新c_var->corpus_phi_sum
-
-    	// 2.2 update lambda & nu
-    	//update_u   Ulambda
-
     	df_Ulambda(c_var, var, mod, df, all_corpus);  // df 是导数
     	int is_legal = 1;
     	for (int i = 0; i < mod->k; i++)
@@ -1330,7 +1333,7 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
 
 
 # if defined(UPDATE_NU)
-    	// Unu
+    	// update_Unu
     	opt_Unu(c_var, var, mod, all_corpus);
     	for (int i = 0; i < mod->k; i++)
     		check_nan(vget(var->Unu, i), "warning:Unu is nan");
@@ -1340,10 +1343,53 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     		gsl_matrix_set_row(c_var->Ucorpus_nu, var->u, var->Unu);
     	}
 #endif
-    	opt_phi(c_var, var, &doc, mod);
 
-    	// update_i
+    	// 2.2 update_i
+    	opt_phi(c_var, var, &doc, mod);
     	df_Ilambda(c_var, var, mod, df, all_corpus);  // df 是导数
+    	is_legal = 1;
+    	for (int i = 0; i < mod->k; i++)
+    	{
+    		check_nan(vget(df, i), "warning: dIlambda is nan");
+    		if(isinf(vget(df, i)))
+    		{
+    			is_legal = 0;
+    			break;
+    		}
+    	}
+    	if (is_legal == 1)
+    	{
+        	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
+        	gsl_vector_add(var->Ilambda, df);   // lambda = lambda + learn_rate * df
+    		show_vect(var->Ilambda, "Ilambda=");
+    		gsl_matrix_set_row(c_var->Vcorpus_lambda, var->i, var->Ilambda);
+    	}
+
+
+# if defined(UPDATE_NU)
+    	// update_Inu
+    	opt_Inu(c_var, var, mod, all_corpus);
+    	for (int i = 0; i < mod->k; i++)
+    		check_nan(vget(var->Inu, 1), "warning:Inu is nan");
+    	if (check_nan(vget(var->Inu, 1), "warning:Inu is nan") == 0)
+    	{
+    		show_vect(var->Inu, "Inu=");
+    		gsl_matrix_set_row(c_var->Vcorpus_nu, var->i, var->Inu);
+    	}
+#endif
+
+
+# if defined(UPDATE_J)
+    	// 2.3 update_j
+    	opt_phi(c_var, var, &doc, mod);
+    	df_Jlambda(c_var, var, mod, df, all_corpus);  // df 是导数
+    	gsl_vector_scale(df, learn_rate); // df = learn_rate * df
+    	gsl_vector_add(var->Jlambda, df);//
+    	gsl_matrix_set_row(c_var->Vcorpus_lambda, var->j, var->Jlambda);
+
+
+
+    	df_Jlambda(c_var, var, mod, df, all_corpus);  // df 是导数
     	is_legal = 1;
     	for (int i = 0; i < mod->k; i++)
     	{
@@ -1358,35 +1404,17 @@ double var_inference(llna_corpus_var * c_var, llna_var_param* var, corpus* all_c
     	if (is_legal == 1)
     	{
         	gsl_vector_scale(df, learn_rate/var->niter); // df = learn_rate * df
-        	gsl_vector_add(var->Ilambda, df);   // lambda = lambda + learn_rate * df
+        	gsl_vector_add(Jlambda, df);   // lambda = lambda + learn_rate * df
     		show_vect(var->Ilambda, "Ilambda=");
     		gsl_matrix_set_row(c_var->Vcorpus_lambda, var->i, var->Ilambda);
     	}
 
 
-# if defined(UPDATE_NU)
-    	// Inu
-    	opt_Inu(c_var, var, mod, all_corpus);
-    	for (int i = 0; i < mod->k; i++)
-    		check_nan(vget(var->Inu, 1), "warning:Inu is nan");
-    	if (check_nan(vget(var->Inu, 1), "warning:Inu is nan") == 0)
-    	{
-    		show_vect(var->Inu, "Inu=");
-    		gsl_matrix_set_row(c_var->Vcorpus_nu, var->i, var->Inu);
-    	}
-#endif
 
 
 
-    	//opt_phi(c_var, var, &doc, mod);
 
-    /*	// update_j
-    	df_Jlambda(c_var, var, mod, df, all_corpus);  // df 是导数
-    	gsl_vector_scale(df, learn_rate); // df = learn_rate * df
-    	gsl_vector_add(var->Jlambda, df);//
-    	gsl_matrix_set_row(c_var->Vcorpus_lambda, var->j, var->Jlambda);*/
-
-
+# endif
     	lhood_old = var->lhood;
     	printf("lhood:%lf\n", var->lhood);
     	lhood_bnd(c_var, var, mod, all_corpus);

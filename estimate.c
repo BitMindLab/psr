@@ -416,7 +416,7 @@ void inference(char* all_dataset, char* test_dataset, int N, char* model_root, c
 
 
     //for(int i=0;i<=iteration+1;i++)
-    for(int i = 1; i <= 20; i++)
+    for(int i = 1; i <= 100; i++)
     {
         sprintf(fname, "./model/%03d-Ucorpus_lambda.dat", i);
         scanf_matrix(fname, Ucorpus_lambda);

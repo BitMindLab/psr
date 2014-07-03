@@ -312,7 +312,7 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
     	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
     	gsl_blas_ddot(var->Ulambda, var->Ilambda, &t1);
     	gsl_blas_ddot(var->Ulambda, &Jlambda, &t2);
-    	printf("t1 = %lf\tt2 = %lf\tzeta_uij = %lf;\t", t1, t2,zeta_uij);  //仅仅为了显示输出值
+    	printf("UI = %lf\tUJ = %lf\tzeta_uij = %lf;\t", t1, t2,zeta_uij);  //仅仅为了显示输出值
     	assert(fabs(t1 - t2 + zeta_uij) < 0.001);
 
 
@@ -332,15 +332,18 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
     for (int i = 0; i < var->num_triples; i++)
     {
     	j_id = var->j[i];
-    	assert (j_id < c_var->Vcorpus_lambda->size1);
-    	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
-    	printf("zeta_uij = %lf;\t", zeta_uij);
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
+
+    	double zeta_uij = get_zeta_uij(c_var, var->u, var->i, j_id);
+        gsl_blas_ddot(var->Ulambda, var->Ilambda, &t2);
+        gsl_blas_ddot(var->Ulambda, &Jlambda, &t3);
+    	printf("UI = %lf\tUJ = %lf\tzeta_uij = %lf;\t", t2, t3,zeta_uij);  //仅仅为了显示输出值
+    	assert(fabs(t1 - t2 + zeta_uij) < 0.001);
+
         t1 =sigmoid(zeta_uij);
 
 
-        gsl_blas_ddot(var->Ulambda, var->Ilambda, &t2);
-        gsl_blas_ddot(var->Ulambda, &Jlambda, &t3);
+
 
         lhood += log(1 - t1) - t1 * (t3 - t2 - zeta_uij);
     }

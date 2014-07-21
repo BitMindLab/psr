@@ -71,8 +71,8 @@ typedef struct llna_ss
     gsl_matrix * beta_ss;
     //gsl_matrix * Vbeta_ss;
 
-    //double cov_ss;
-    double ndata;
+    double ndoc;
+    double nrating;
     //double Vndata;
     //double nratings;
 } llna_ss;

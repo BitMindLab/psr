@@ -24,7 +24,7 @@
 //#define UPDATE_J
 //#define UPDATE_MOD
 
-//#define DEBUG
+#define DEBUG
 //#define SHOW_PREDICTION
 //#define PARALLEL
 #define MLE 0

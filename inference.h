@@ -123,7 +123,7 @@ void show_sample(int * j, int num_triples);
 void  init_corpus_var(llna_corpus_var * c_var, char* start);
 
 
-void init_temp_vectors(int size);
+void new_temp_vectors(int size);
 void init_Uvar_unif(llna_var_param * var, doc * Udoc, llna_model * mod);
 void init_Vvar_unif(llna_var_param * var, doc * Vdoc, llna_model * mod);
 void init_var(llna_corpus_var * c_var, llna_var_param * var, doc * doc, llna_model * mod);

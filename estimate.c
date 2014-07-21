@@ -74,7 +74,7 @@ void expectation(corpus* all_corpus, llna_model* model, llna_ss* ss,
 # endif
     	for (int d = 0; d < all_corpus->ndocs; d++)
     	{
-    		init_temp_vectors(model->k);
+    		new_temp_vectors(model->k);
     		llna_var_param* var;
 			printf("doc ID: %5d, ThreadId = %d\n ", d+1, omp_get_thread_num());
 
@@ -89,7 +89,6 @@ void expectation(corpus* all_corpus, llna_model* model, llna_ss* ss,
 			printf("lhood %5.5e   niter %5d\n", lhood, var->niter);
 			*avg_niter += var->niter;           //avg_niter=var_inference过程中的平均迭代次数
 			*converged_pct += var->converged;
-
 
 			free_llna_var_param(var);
 			free_temp_vectors(model->k);
@@ -188,8 +187,8 @@ void maximization(llna_model* model, llna_ss * ss)
 # if defined(UPDATE_MOD)
     // 1. mean maximization  更新 model->mu
     for (i = 0; i < model->k; i++) {
-    	vset(model->Umu, i, vget(ss->Umu_ss, i) / ss->ndata);
-    	vset(model->Vmu, i, vget(ss->Vmu_ss, i) / ss->ndata);
+    	vset(model->Umu, i, vget(ss->Umu_ss, i) / ss->nrating);
+    	vset(model->Vmu, i, vget(ss->Vmu_ss, i) / ss->nrating);
     }
 
     // 2.1 covariance maximization
@@ -198,16 +197,16 @@ void maximization(llna_model* model, llna_ss * ss)
         for (j = 0; j < model->k; j++)
         {
             mset(model->Ucov, i, j,
-                 (1.0 / ss->ndata) *
+                 (1.0 / ss->nrating) *
                  (mget(ss->Ucov_ss, i, j) +
-                  ss->ndata * vget(model->Umu, i) * vget(model->Umu, j) -
+                  ss->nrating * vget(model->Umu, i) * vget(model->Umu, j) -
                   vget(ss->Umu_ss, i) * vget(model->Umu, j) -
                   vget(ss->Umu_ss, j) * vget(model->Umu, i)));
         }
     }
     if (PARAMS.cov_estimate == SHRINK)
     {
-        cov_shrinkage(model->Ucov, ss->ndata, model->Ucov);
+        cov_shrinkage(model->Ucov, ss->nrating, model->Ucov);
     }
     matrix_inverse(model->Ucov, model->Uinv_cov);
     model->Ulog_det_inv_cov = log_det(model->Uinv_cov);
@@ -218,16 +217,16 @@ void maximization(llna_model* model, llna_ss * ss)
         for (j = 0; j < model->k; j++)
         {
             mset(model->Vcov, i, j,
-                 (1.0 / ss->ndata) *
+                 (1.0 / ss->nrating) *
                  (mget(ss->Vcov_ss, i, j) +
-                  ss->ndata * vget(model->Vmu, i) * vget(model->Vmu, j) -
+                  ss->nrating * vget(model->Vmu, i) * vget(model->Vmu, j) -
                   vget(ss->Vmu_ss, i) * vget(model->Vmu, j) -
                   vget(ss->Vmu_ss, j) * vget(model->Vmu, i)));
         }
     }
     if (PARAMS.cov_estimate == SHRINK)
     {
-        cov_shrinkage(model->Vcov, ss->ndata, model->Vcov);
+        cov_shrinkage(model->Vcov, ss->nrating, model->Vcov);
     }
     matrix_inverse(model->Vcov, model->Vinv_cov);
     model->Vlog_det_inv_cov = log_det(model->Vinv_cov);
@@ -567,9 +566,8 @@ int main(int argc, char* argv[])
 
             em(argv[2], atoi(argv[3]), argv[4], argv[5]);
 
-            inference("ap_User_URL.dat", "ap_User_URL.dat", 5000, "final","out");
-            inference("ap_User_URL_mid.dat", "ap_User_URL_mid.dat", 60000, "final","out");
-            inference("ap_User_URL_mid.dat", "ap_User_URL_mid.dat", 60000, "final","out");
+            //inference(argv[2], argv[2], 2000, "final","out"); //ap_User_URL.dat
+            inference(argv[2], argv[2], 20000, "final","out"); //ap_User_URL_mid_train.dat
 
             return(0);
         }

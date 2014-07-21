@@ -79,7 +79,9 @@ llna_ss * new_llna_ss(llna_model* model)
     ss->beta_ss = gsl_matrix_calloc(model->k, model->log_beta->size2);
     //ss->Vbeta_ss = gsl_matrix_calloc(model->k, model->log_beta->size2);
     //ss->cov_ss = 0;
-    ss->ndata = 0;
+    ss->nrating = 0;
+    ss->ndoc = 0;
+
 
     reset_llna_ss(ss);
     return(ss);
@@ -105,7 +107,8 @@ void reset_llna_ss(llna_ss * ss)
     gsl_vector_set_all(ss->Umu_ss, 0);
     gsl_vector_set_all(ss->Vmu_ss, 0);
     //ss->cov_ss = 0;
-    ss->ndata = 0;
+    ss->nrating = 0;
+    ss->ndoc = 0;
     //ss->Vndata = 0;
     //ss->nratings = 0;
 }

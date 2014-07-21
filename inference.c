@@ -59,7 +59,7 @@ gsl_vector * Inu;
 int u,i,j;*/
 int ntemp = 5;
 
-void init_temp_vectors(int size)
+void new_temp_vectors(int size)
 {
     int i;
 /*    Ulambda = gsl_vector_alloc(size);
@@ -338,7 +338,7 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
         gsl_blas_ddot(var->Ulambda, var->Ilambda, &t2);
         gsl_blas_ddot(var->Ulambda, &Jlambda, &t3);
     	printf("UI = %lf\tUJ = %lf\tzeta_uij = %lf;\t", t2, t3,zeta_uij);  //仅仅为了显示输出值
-    	assert(fabs(t1 - t2 + zeta_uij) < 0.001);
+    	assert(fabs(t2 - t3 + zeta_uij) < 0.001);
 
         t1 =sigmoid(zeta_uij);
 
@@ -359,33 +359,36 @@ void lhood_bnd(llna_corpus_var* c_var, llna_var_param * var, llna_model* mod, co
     int total = doc.total;
     lhood -= expect_mult_norm(c_var, var) * total;
 
-    for (int i = 0; i < doc.nterms; i++)
-    {
-        // !!! we can speed this up by turning it into a dot product
-        // !!! profiler says this is where some time is spent
-        for (int j = 0; j < mod->k; j++)
-        {
-        	if (i >= var->phi->size1 || j >= var->phi->size2)
-        	{
-        		printf("warning: out of range in lhood_bnd 2");
-        	}
 
-            double phi_ij = mget(var->phi, i, j);
-            double log_phi_ij = mget(var->log_phi, i, j);
+	for (int i = 0; i < doc.nterms; i++)
+	{
+		// !!! we can speed this up by turning it into a dot product
+		// !!! profiler says this is where some time is spent
+		for (int j = 0; j < mod->k; j++)
+		{
+			if (i >= var->phi->size1 || j >= var->phi->size2)
+			{
+				printf("warning: out of range in lhood_bnd 2");
+			}
+
+			double phi_ij = mget(var->phi, i, j);
+			double log_phi_ij = mget(var->log_phi, i, j);
 
 
 
-            if (phi_ij > 0)
-            {
-                vinc(var->Utopic_scores, j, phi_ij * doc.count[i]);  // Utopic_scores干嘛用的？
-                lhood +=
-                    doc.count[i] * phi_ij *
-                    (vget(var->Ulambda, j) +
-                     mget(mod->log_beta, j, doc.word[i]) -
-                     log_phi_ij);
-            }
-        }
-    }
+			if (phi_ij > 0)
+			{
+				vinc(var->Utopic_scores, j, phi_ij * doc.count[i]);  // Utopic_scores干嘛用的？
+				lhood +=
+					doc.count[i] * phi_ij *
+					(vget(var->Ulambda, j) +
+					 mget(mod->log_beta, j, doc.word[i]) -
+					 log_phi_ij);
+			}
+		}
+	}
+
+
     var->lhood = lhood;
 }
 
@@ -464,6 +467,9 @@ void SampleTriple(corpus* all_corpus, llna_var_param * var)
 
 void opt_phi(llna_corpus_var * c_var, llna_var_param * var, doc * doc, llna_model * mod)
 {
+	if(doc->nterms == 0)
+		return;
+
     int i, n, K = mod->k;
     double log_sum_n = 0;
 
@@ -558,7 +564,7 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     	gsl_vector Jlambda = gsl_matrix_row(c_var->Vcorpus_lambda, j_id).vector;
     	gsl_blas_dcopy(var->Ilambda, temp[2]);
         gsl_vector_sub(temp[2], &Jlambda);  //temp[2] = Ilambda-Jlambda
-        gsl_blas_ddot(var->Ulambda, temp[2], &t1);
+        gsl_blas_ddot(var->Ulambda, temp[2], &t1); //t1 = UI - UJ
         if(t1 < 1)
         {
         	gsl_vector_add(temp[1],temp[2]);
@@ -597,9 +603,11 @@ void df_Ulambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     for (int n = 0; n < udoc_list.size; n++)
     {
     	int doc_id = udoc_list.id[n];
-    	gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;// .....以上都已经检查无误！
-
-    	gsl_vector_add(temp[2], &tt);
+    	if(all_corpus->docs[doc_id].nterms > 0)
+    	{
+			gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;// .....以上都已经检查无误！
+			gsl_vector_add(temp[2], &tt);
+    	}
     }
     gsl_vector_scale(temp[2], 0.5); // temp[2]
 
@@ -714,14 +722,11 @@ void df_Ilambda(llna_corpus_var * c_var, llna_var_param * var, llna_model * mod,
     for (int n = 0; n < idoc_list.size; n++)
     {
     	int doc_id = idoc_list.id[n];
-    	gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;
-
-    	/*double aaa = 0.0;
-    	for(int k = 0; k < mod->k; k++ )
-    		aaa += vget(&tt, k);
-    	printf("is_equal 1: %lf\n", aaa);*/
-
-    	gsl_vector_add(temp[2], &tt);
+    	if(all_corpus->docs[doc_id].nterms > 0)
+    	{
+			gsl_vector tt = gsl_matrix_row(c_var->corpus_phi_sum, doc_id).vector;
+			gsl_vector_add(temp[2], &tt);
+    	}
     }
     gsl_vector_scale(temp[2], 0.5); // temp[2]
 
@@ -1133,7 +1138,6 @@ void init_var( llna_corpus_var * c_var, llna_var_param * var, doc * doc, llna_mo
     var->num_triples = NUM_SAMPLE;
     var->lhood = 0.0;
 
-    var->j =  malloc(sizeof(int) * var->num_triples);
     for (int i = 0; i < var->num_triples; i++)
     	var->j[i] = -1;  // means not legal value
 
@@ -1166,15 +1170,25 @@ llna_var_param * new_llna_var_param(int nterms, int k)
     ret->Ilambda = gsl_vector_alloc(k);
     ret->Unu = gsl_vector_alloc(k);
     ret->Inu = gsl_vector_alloc(k);
+    ret->j =  malloc(sizeof(int) * NUM_SAMPLE);
 
     //ret->Unu = malloc(sizeof(double)); //因为不是指针，因此就没必要申请空间
-    ret->phi = gsl_matrix_alloc(nterms, k);
-    ret->log_phi = gsl_matrix_alloc(nterms, k);
-    ret->phi_sum = gsl_vector_alloc(k);
+    if(nterms > 0)
+    {
+        ret->phi = gsl_matrix_alloc(nterms, k);
+        ret->log_phi = gsl_matrix_alloc(nterms, k);
+        ret->phi_sum = gsl_vector_alloc(k);
+        ret->Utopic_scores = gsl_vector_alloc(k); //求lhood的时候会用到
+        ret->Vtopic_scores = gsl_vector_alloc(k);
+    } else
+    {
+        ret->phi = NULL;
+        ret->log_phi = NULL;
+        ret->phi_sum = NULL;
+        ret->Utopic_scores = NULL; //求lhood的时候会用到
+        ret->Vtopic_scores = NULL;
+    }
 
-
-    ret->Utopic_scores = gsl_vector_alloc(k); //???干嘛的
-    ret->Vtopic_scores = gsl_vector_alloc(k);
     return(ret);
 }
 
@@ -1268,12 +1282,15 @@ void  init_corpus_var(llna_corpus_var * c_var, char* start)
 void free_llna_var_param(llna_var_param * v)
 {
     gsl_vector_free(v->Ulambda);
-
-
+    gsl_vector_free(v->Ilambda);
     gsl_vector_free(v->Unu);
-    gsl_matrix_free(v->phi);
-    gsl_matrix_free(v->log_phi);
-    gsl_vector_free(v->Utopic_scores);
+    gsl_vector_free(v->Inu);
+    free(v->j);
+    if(v->phi)    gsl_matrix_free(v->phi);
+    if(v->log_phi)	gsl_matrix_free(v->log_phi);
+    if(v->phi_sum)    gsl_vector_free(v->phi_sum);
+    if(v->Utopic_scores) gsl_vector_free(v->Utopic_scores);
+    if(v->Vtopic_scores) gsl_vector_free(v->Vtopic_scores);
     free(v);
 }
 /*
@@ -1500,7 +1517,8 @@ void update_expected_ss(llna_corpus_var * c_var, llna_var_param* var, doc* doc, 
         }
     }
     // 4. number of data
-    ss->ndata++;  //最终应该等于 ndocs
+    if(doc->nterms > 0)  ss->ndoc++;  //最终应该等于 ndocs
+    ss->nrating++;  //最终应该等于 nratings
 }
 
 /*

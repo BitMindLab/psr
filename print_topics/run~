@@ -1,3 +1,0 @@
-python ctm-topics.py final-log-beta.dat vocab.txt 10
-sleep 1000
-#暂停1000秒

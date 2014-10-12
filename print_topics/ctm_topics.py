@@ -20,7 +20,7 @@ def print_topics(beta_file, vocab_file,
     nterms  = len(vocab)
     ntopics = len(topic)/nterms
     topic   = numpy.reshape(topic, [ntopics, nterms])
-    f = open(r'topicss.txt','w')
+    f = open(r'topic','w')
     for i in range(ntopics):
         out.write('\ntopic %03d\n' % i)
         f.writelines('\ntopic %03d\n' % i)

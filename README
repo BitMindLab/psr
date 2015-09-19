@@ -10,7 +10,7 @@ This file is part of PSR.
 ----
 
 This is a C-implementation of the personalized semantic ranking (PSR) from
-Song Xu (AAAI 2015).  This code requires the GSL library.
+Song Xu (SIGIR 2015).  This code requires the GSL library.
 
 Any questions or comments about this code should be sent to s2jackson@hotmail.com
 DO NOT EMAIL EITHER OF THE AUTHORS WITH QUESTIONS

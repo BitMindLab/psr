@@ -579,8 +579,8 @@ int main(int argc, char* argv[])
             return(0);
         }
     }
-    printf("usage : ctm est <dataset_user> <dataset_item> <dataset_rating> <# topics> <rand/seed/model> <dir> <settings>\n");
-    printf("        ctm inf <dataset_user> <dataset_item> <dataset_rating> <model-prefix> <results-prefix> <settings>\n");  //未改
+    printf("usage : ctm est <dataset> <# topics> <rand/seed/model> <dir> <settings>\n");
+    //printf("        ctm inf <dataset> <model-prefix> <results-prefix> <settings>\n");
     //error_end:printf("program is ended");
     return(0);
 }

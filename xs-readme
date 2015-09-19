@@ -4,7 +4,7 @@ project----property---C build---settings---gcc linker---libraries--加入gsl和c
 
 
 ==================== movielens ==================== 
-ctm est ap_user.dat ap_movie.dat ap_rating.dat 50 rand /home/xx/workspace/myC/ctm-dist_for_MF settings.txt
+ctm est ap_user.dat ap_movie.dat ap_rating.dat 50 rand /home/xx/workspace/myC/PSR settings.txt
 
 
 CIKM版本特有

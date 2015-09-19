@@ -49,7 +49,9 @@ Under the CTM, the words of each document are assumed exchangeable.
 Thus, each document is succinctly represented as a sparse vector of
 word counts. The data is a file where each line is of the form:
 
-     [M] [term_1]:[count_1] [term_2]:[count_2] ...  [term_N]:[count_3]
+     [U]|[V] [M] [term_1]:[count_1] [term_2]:[count_2] ...  [term_N]:[count_3]
+
+* [U] is the user ID, [V] is the item ID
 
 * [M] is the number of unique terms in the document
 
@@ -64,11 +66,11 @@ C. Estimating a model
 
 The command to estimate a model is:
 
-./ctm est <dataset> <k> <rand/seed/model> <dir> <settings>
+./ctm est <dataset> <# topics> <rand/seed/model> <dir> <settings>
 
 For example:
 
-./ctm est my-training-data.dat 10 seed CTM10 settings.txt
+./ctm est ap_AuPub.dat 50 rand ./ settings.txt
 
 - <dataset> is the file described above in part B.
 
